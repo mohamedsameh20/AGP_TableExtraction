@@ -1,16 +1,43 @@
-# React + Vite
+# Ag27 Web App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite frontend for the Ag27 table extraction project.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Open the local URL printed by Vite, usually `http://127.0.0.1:5173/`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+On Windows PowerShell, if `npm` is blocked by execution policy, use:
 
-## Expanding the ESLint configuration
+```bash
+npm.cmd run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Build
+
+```bash
+npm run build
+```
+
+The production files are written to `dist/`.
+
+## Included tools
+
+The app header includes the original React tools plus static Stitch desktop pages copied into `public/stitch-tools/`:
+
+- `upload-tasks.html`
+- `extraction-gallery.html`
+- `ocr-verification-editor.html`
+- `system-dashboard.html`
+
+These pages are served by Vite as static files and displayed inside the app shell.
+
+## Notes
+
+- `src/App.jsx` controls the tool navigation.
+- `src/index.css` contains the shared layout and iframe styles.
+- `precision_monitor` did not include an HTML file, so no static page was added for it.
