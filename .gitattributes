@@ -1,0 +1,4 @@
+TATR_TD/model.safetensors filter=lfs diff=lfs merge=lfs -text
+TableStructureRecognition/model.safetensors filter=lfs diff=lfs merge=lfs -text
+ocr_models/texdet.onnx filter=lfs diff=lfs merge=lfs -text
+ocr_models/textrec.onnx filter=lfs diff=lfs merge=lfs -text

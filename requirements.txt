@@ -1,0 +1,11 @@
+torch>=2.1.0
+torchvision>=0.16.0
+transformers>=4.36.0
+timm>=0.9.0
+safetensors>=0.4.0
+rapidocr-onnxruntime>=1.4.0
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+PySide6>=6.6.0
+openpyxl>=3.1.0

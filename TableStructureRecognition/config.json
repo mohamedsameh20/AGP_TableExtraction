@@ -1,0 +1,82 @@
+{
+  "activation_dropout": 0.0,
+  "activation_function": "relu",
+  "architectures": [
+    "TableTransformerForObjectDetection"
+  ],
+  "attention_dropout": 0.0,
+  "auxiliary_loss": false,
+  "backbone_config": {
+    "backbone": "resnet18",
+    "features_only": true,
+    "freeze_batch_norm_2d": false,
+    "model_type": "timm_backbone",
+    "num_channels": 3,
+    "out_features": [
+      "layer1",
+      "layer2",
+      "layer3",
+      "layer4"
+    ],
+    "out_indices": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "output_stride": null,
+    "stage_names": [
+      "act1",
+      "layer1",
+      "layer2",
+      "layer3",
+      "layer4"
+    ],
+    "use_pretrained_backbone": false
+  },
+  "bbox_cost": 5,
+  "bbox_loss_coefficient": 5,
+  "ce_loss_coefficient": 1,
+  "class_cost": 1,
+  "d_model": 256,
+  "decoder_attention_heads": 8,
+  "decoder_ffn_dim": 2048,
+  "decoder_layerdrop": 0.0,
+  "decoder_layers": 6,
+  "dice_loss_coefficient": 1,
+  "dropout": 0.1,
+  "dtype": "float32",
+  "encoder_attention_heads": 8,
+  "encoder_ffn_dim": 2048,
+  "encoder_layerdrop": 0.0,
+  "encoder_layers": 6,
+  "eos_coefficient": 0.4,
+  "giou_cost": 2,
+  "giou_loss_coefficient": 2,
+  "id2label": {
+    "0": "table",
+    "1": "table column",
+    "2": "table row",
+    "3": "table column header",
+    "4": "table projected row header",
+    "5": "table spanning cell"
+  },
+  "init_std": 0.02,
+  "init_xavier_std": 1.0,
+  "is_encoder_decoder": true,
+  "label2id": {
+    "table": 0,
+    "table column": 1,
+    "table column header": 3,
+    "table projected row header": 4,
+    "table row": 2,
+    "table spanning cell": 5
+  },
+  "mask_loss_coefficient": 1,
+  "model_type": "table-transformer",
+  "num_channels": 3,
+  "num_hidden_layers": 6,
+  "num_queries": 125,
+  "position_embedding_type": "sine",
+  "transformers_version": "5.3.0"
+}
