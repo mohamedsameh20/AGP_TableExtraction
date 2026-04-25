@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #020617;
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #020617;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#171f33",
+                        "surface-dim": "#0b1326",
+                        "tertiary-container": "#00b17b",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container-highest": "#2d3449",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "inverse-primary": "#006591",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "primary-fixed": "#c9e6ff",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-tertiary-fixed": "#002113",
+                        "background": "#0b1326",
+                        "surface-container-low": "#131b2e",
+                        "primary-fixed-dim": "#89ceff",
+                        "on-primary-container": "#003751",
+                        "on-primary": "#00344d",
+                        "surface-container-high": "#222a3d",
+                        "outline-variant": "#3e4850",
+                        "primary": "#89ceff",
+                        "primary-container": "#0ea5e9",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "on-secondary": "#213145",
+                        "tertiary": "#4edea3",
+                        "on-surface-variant": "#bec8d2",
+                        "on-background": "#dae2fd",
+                        "on-secondary-fixed": "#0b1c30",
+                        "on-tertiary": "#003824",
+                        "surface": "#0b1326",
+                        "surface-bright": "#31394d",
+                        "on-surface": "#dae2fd",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-secondary-container": "#a9bad3",
+                        "on-tertiary-container": "#003b26",
+                        "error-container": "#93000a",
+                        "surface-variant": "#2d3449",
+                        "secondary": "#b7c8e1",
+                        "outline": "#88929b",
+                        "error": "#ffb4ab",
+                        "on-primary-fixed": "#001e2f",
+                        "on-primary-fixed-variant": "#004c6e",
+                        "surface-tint": "#89ceff",
+                        "surface-container-lowest": "#060e20",
+                        "secondary-container": "#3a4a5f",
+                        "inverse-surface": "#dae2fd",
+                        "inverse-on-surface": "#283044"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "row-height-standard": "40px",
+                        "gutter": "12px",
+                        "container-padding": "24px",
+                        "unit": "4px",
+                        "element-gap": "8px",
+                        "row-height-compact": "32px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-caps": ["Space Grotesk"],
+                        "body-xs": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "data-mono": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "display-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.06em", "fontWeight": "700"}],
+                        "body-xs": ["12px", {"lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "data-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-sm selection:bg-primary/30">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center h-14 px-6 w-full sticky top-0 z-50 bg-slate-900 dark:bg-[#0F172A] border-b border-slate-700 dark:border-[#334155] font-inter text-sm tracking-tight shadow-none">
+<div class="flex items-center gap-8">
+<span class="text-lg font-bold tracking-tighter text-slate-50 dark:text-slate-50">ExtractEngine Pro</span>
+<nav class="hidden md:flex items-center gap-6 h-full">
+<a class="text-slate-400 dark:text-slate-400 hover:text-slate-200 transition-colors py-4" href="#">Dashboard</a>
+<a class="text-sky-500 dark:text-[#0EA5E9] border-b-2 border-sky-500 pb-2 h-full flex items-center" href="#">Workspaces</a>
+<a class="text-slate-400 dark:text-slate-400 hover:text-slate-200 transition-colors py-4" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+</div>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 rounded font-medium text-xs active:scale-95 duration-150 transition-all">New Extraction</button>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="Close-up of a professional software engineer profile photo with neutral background and soft cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChbQl6XsHRRxblnILx1en_YgVCg3us139FxrdAE_7D8LrOLfpAcj5-SI0QWgfyF67spt6TfOzaD2S9it1U0AMNylBwANu43-cjeEDXyu6__qWaeYyAh1ZA-ifa7f5ldsHNP_Fra1LObYdP56K729wPyT3OyNoxm5KMGu5uPIcFOj6X5eNHD4j7pSUkrXNYso_AkBJ4AQ9mjdRuNt72qVnqksKd5v5rUoAXBEGPsX9BOF79W15rjmGRN6ni7_otsTQHc8Wrl_NyZKk"/>
+</div>
+</header>
+<div class="flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col pt-16 z-40 bg-slate-900 dark:bg-[#0F172A] w-60 border-r border-slate-700 dark:border-[#334155] font-inter text-xs font-medium uppercase tracking-widest">
+<div class="px-6 py-4 flex items-center gap-3 mb-6">
+<div class="w-8 h-8 bg-surface-container-highest rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="analytics">analytics</span>
+</div>
+<div>
+<div class="text-on-surface font-bold text-[10px] tracking-tight normal-case">Core Engine</div>
+<div class="text-slate-500 text-[9px] tracking-tight normal-case">v2.4.0-Stable</div>
+</div>
+</div>
+<div class="flex-1 space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer active:opacity-80 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 bg-slate-800 dark:bg-[#1E293B] text-sky-500 border-r-2 border-sky-500 cursor-pointer active:opacity-80 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span>Upload</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer active:opacity-80 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span>OCR Editor</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer active:opacity-80 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="photo_library">photo_library</span>
+<span>Gallery</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer active:opacity-80 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>System Health</span>
+</div>
+</div>
+<div class="mt-auto border-t border-slate-700 dark:border-[#334155] py-4">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer active:opacity-80 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span>Logs</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer active:opacity-80 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-60 flex-1 min-h-screen p-container-padding">
+<div class="max-w-7xl mx-auto space-y-gutter">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface">Data Ingestion</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Upload unstructured documents for high-precision OCR extraction.</p>
+</div>
+<div class="flex gap-element-gap">
+<div class="flex flex-col items-end">
+<span class="font-label-caps text-label-caps text-outline uppercase">Daily Limit</span>
+<span class="font-data-mono text-data-mono text-primary">482 / 1,000 OCR Units</span>
+</div>
+</div>
+</div>
+<!-- Upload Bento Area -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Drag & Drop Zone -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container border border-outline-variant rounded-xl p-8 relative overflow-hidden group">
+<!-- Decorative Background Pattern -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#89ceff 1px, transparent 1px); background-size: 24px 24px;"></div>
+<div class="relative border-2 border-dashed border-outline-variant group-hover:border-primary/50 transition-colors rounded-lg h-80 flex flex-col items-center justify-center bg-surface-container-low/50">
+<div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="cloud_upload">cloud_upload</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Drag and drop files here</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 text-center px-12">Support for PDF, JPG, PNG, and TIFF up to 50MB per file. Multi-page document extraction enabled.</p>
+<div class="flex gap-4">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="upload">upload</span>
+                                    Browse Files
+                                </button>
+<button class="bg-surface-container-highest text-on-surface px-6 py-2 rounded-lg font-semibold border border-outline-variant hover:bg-surface-bright active:scale-95 transition-all">
+                                    Enter URL
+                                </button>
+</div>
+</div>
+</div>
+<!-- Config Panel -->
+<div class="col-span-12 lg:col-span-4 space-y-gutter">
+<div class="bg-surface-container border border-outline-variant rounded-xl p-6">
+<h4 class="font-label-caps text-label-caps text-outline uppercase mb-4">Ingestion Profile</h4>
+<div class="space-y-4">
+<div>
+<label class="block font-body-xs text-body-xs text-on-surface-variant mb-1.5">Extraction Model</label>
+<select class="w-full bg-surface-dim border border-outline-variant rounded p-2 text-on-surface font-body-sm focus:ring-1 focus:ring-primary focus:outline-none">
+<option>Vision Pro v2 (Optimized for Invoices)</option>
+<option>NeuralReader v4 (Legacy)</option>
+<option>Handwriting OCR (Beta)</option>
+</select>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant rounded">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-body-sm text-on-surface">Auto-Rotate Pages</span>
+</div>
+<div class="w-10 h-5 bg-tertiary-container rounded-full relative cursor-pointer">
+<div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant rounded">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="translate">translate</span>
+<span class="font-body-sm text-on-surface">Detect Language</span>
+</div>
+<div class="w-10 h-5 bg-surface-container-highest rounded-full relative cursor-pointer">
+<div class="absolute left-0.5 top-0.5 w-4 h-4 bg-outline rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- System Stats Card -->
+<div class="bg-primary/5 border border-primary/20 rounded-xl p-6">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-caps text-label-caps text-primary uppercase">Engine Status</span>
+<span class="flex h-2 w-2 rounded-full bg-tertiary animate-pulse"></span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-data-mono font-bold text-on-surface">99.4</span>
+<span class="text-body-xs text-on-surface-variant">% Confidence Avg</span>
+</div>
+<div class="mt-4 h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[92%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Tasks Section -->
+<section class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden mt-8">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-high/30">
+<div class="flex items-center gap-3">
+<h2 class="font-headline-md text-headline-md text-on-surface">Active Tasks</h2>
+<span class="bg-primary-container/20 text-primary-fixed px-2 py-0.5 rounded text-[10px] font-bold">4 RUNNING</span>
+</div>
+<div class="flex gap-2">
+<button class="text-body-xs text-on-surface-variant hover:text-on-surface flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[16px]" data-icon="refresh">refresh</span>
+                                Refresh Feed
+                            </button>
+</div>
+</div>
+<!-- Task List Header -->
+<div class="grid grid-cols-12 px-6 py-2 border-b border-outline-variant bg-surface-container-low font-label-caps text-label-caps text-outline uppercase">
+<div class="col-span-5">Filename / Source</div>
+<div class="col-span-3">Progress / Status</div>
+<div class="col-span-2">Time Elapsed</div>
+<div class="col-span-2 text-right">Actions</div>
+</div>
+<!-- Tasks -->
+<div class="divide-y divide-outline-variant">
+<!-- Task Item: Processing -->
+<div class="grid grid-cols-12 px-6 py-4 items-center group hover:bg-surface-container-highest/50 transition-colors">
+<div class="col-span-5 flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container-highest rounded flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+<div>
+<div class="font-body-sm font-semibold text-on-surface">q3_invoice_batch_consolidated.pdf</div>
+<div class="text-body-xs text-on-surface-variant">12.4 MB • 42 Pages</div>
+</div>
+</div>
+<div class="col-span-3">
+<div class="flex justify-between mb-1.5 items-center">
+<span class="font-body-xs text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="sync" style="font-variation-settings: 'wght' 700;">sync</span>
+                                        Processing
+                                    </span>
+<span class="font-data-mono text-body-xs text-on-surface">64%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[64%] shadow-[0_0_8px_rgba(137,206,255,0.4)]"></div>
+</div>
+</div>
+<div class="col-span-2 font-data-mono text-body-sm text-on-surface-variant">00:14:22</div>
+<div class="col-span-2 flex justify-end gap-2">
+<button class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-error hover:border-error transition-all active:scale-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="cancel">cancel</span>
+</button>
+<button class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all active:scale-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Task Item: Completed -->
+<div class="grid grid-cols-12 px-6 py-4 items-center group hover:bg-surface-container-highest/50 transition-colors">
+<div class="col-span-5 flex items-center gap-3 opacity-80">
+<div class="w-10 h-10 bg-tertiary/10 rounded flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="image">image</span>
+</div>
+<div>
+<div class="font-body-sm font-semibold text-on-surface">warehouse_receipt_scan_04.jpg</div>
+<div class="text-body-xs text-on-surface-variant">1.8 MB • Single Image</div>
+</div>
+</div>
+<div class="col-span-3">
+<div class="flex items-center gap-2 mb-1.5">
+<span class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold uppercase tracking-wider">Completed</span>
+<span class="material-symbols-outlined text-tertiary text-[16px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="h-1.5 w-full bg-tertiary/20 rounded-full">
+<div class="h-full bg-tertiary w-full"></div>
+</div>
+</div>
+<div class="col-span-2 font-data-mono text-body-sm text-on-surface-variant">00:02:11</div>
+<div class="col-span-2 flex justify-end gap-2">
+<button class="bg-surface-container-highest text-primary text-xs px-3 py-1 rounded border border-outline-variant hover:bg-primary/10 transition-all font-semibold active:scale-95">
+                                    View Data
+                                </button>
+</div>
+</div>
+<!-- Task Item: Queued -->
+<div class="grid grid-cols-12 px-6 py-4 items-center group hover:bg-surface-container-highest/50 transition-colors">
+<div class="col-span-5 flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container-highest rounded flex items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+<div>
+<div class="font-body-sm font-semibold text-on-surface">annual_report_2023_full.pdf</div>
+<div class="text-body-xs text-on-surface-variant">34.2 MB • 218 Pages</div>
+</div>
+</div>
+<div class="col-span-3">
+<div class="flex items-center gap-2 mb-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-outline text-[10px] font-bold uppercase tracking-wider">Queued</span>
+<span class="text-body-xs text-outline italic">#2 in line</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full">
+<div class="h-full bg-outline/20 w-0"></div>
+</div>
+</div>
+<div class="col-span-2 font-data-mono text-body-sm text-on-surface-variant">--:--:--</div>
+<div class="col-span-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all active:scale-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="priority_high">priority_high</span>
+</button>
+<button class="w-8 h-8 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-error transition-all active:scale-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Processing History Snapshot -->
+<div class="grid grid-cols-4 gap-gutter mt-8">
+<div class="bg-surface-container border border-outline-variant rounded-xl p-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</div>
+<div>
+<div class="font-label-caps text-label-caps text-outline uppercase">Last 24h</div>
+<div class="font-data-mono text-lg text-on-surface">1,402 Files</div>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant rounded-xl p-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+</div>
+<div>
+<div class="font-label-caps text-label-caps text-outline uppercase">Avg Speed</div>
+<div class="font-data-mono text-lg text-on-surface">1.2s / pg</div>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant rounded-xl p-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</div>
+<div>
+<div class="font-label-caps text-label-caps text-outline uppercase">CPU Load</div>
+<div class="font-data-mono text-lg text-on-surface">24.5%</div>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant rounded-xl p-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+</div>
+<div>
+<div class="font-label-caps text-label-caps text-outline uppercase">Failed</div>
+<div class="font-data-mono text-lg text-on-surface">0 (0.00%)</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Floating Action Button - Supressed as per detail page logic, but included for global context if needed -->
+<!-- Suppression Logic: Suppressed on focused task-specific screens like Upload -->
+</body></html>

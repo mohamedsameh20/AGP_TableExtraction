@@ -4,7 +4,7 @@ export default function ImageViewer({ imageUrl, tables }) {
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const [imgLoaded, setImgLoaded] = useState(false)
-  const [hoveredCell, setHoveredCell] = useState(null)
+  const [hoveredCell] = useState(null)
   const imgRef = useRef(null)
 
   useEffect(() => {

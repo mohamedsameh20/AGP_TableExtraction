@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "surface-container": "#171f33",
+                  "surface-dim": "#0b1326",
+                  "tertiary-container": "#00b17b",
+                  "secondary-fixed": "#d3e4fe",
+                  "surface-container-highest": "#2d3449",
+                  "on-tertiary-fixed-variant": "#005236",
+                  "inverse-primary": "#006591",
+                  "on-error-container": "#ffdad6",
+                  "on-error": "#690005",
+                  "primary-fixed": "#c9e6ff",
+                  "tertiary-fixed": "#6ffbbe",
+                  "on-tertiary-fixed": "#002113",
+                  "background": "#0b1326",
+                  "surface-container-low": "#131b2e",
+                  "primary-fixed-dim": "#89ceff",
+                  "on-primary-container": "#003751",
+                  "on-primary": "#00344d",
+                  "surface-container-high": "#222a3d",
+                  "outline-variant": "#3e4850",
+                  "primary": "#89ceff",
+                  "primary-container": "#0ea5e9",
+                  "secondary-fixed-dim": "#b7c8e1",
+                  "on-secondary-fixed-variant": "#38485d",
+                  "on-secondary": "#213145",
+                  "tertiary": "#4edea3",
+                  "on-surface-variant": "#bec8d2",
+                  "on-background": "#dae2fd",
+                  "on-secondary-fixed": "#0b1c30",
+                  "on-tertiary": "#003824",
+                  "surface": "#0b1326",
+                  "surface-bright": "#31394d",
+                  "on-surface": "#dae2fd",
+                  "tertiary-fixed-dim": "#4edea3",
+                  "on-secondary-container": "#a9bad3",
+                  "on-tertiary-container": "#003b26",
+                  "error-container": "#93000a",
+                  "surface-variant": "#2d3449",
+                  "secondary": "#b7c8e1",
+                  "outline": "#88929b",
+                  "error": "#ffb4ab",
+                  "on-primary-fixed": "#001e2f",
+                  "on-primary-fixed-variant": "#004c6e",
+                  "surface-tint": "#89ceff",
+                  "surface-container-lowest": "#060e20",
+                  "secondary-container": "#3a4a5f",
+                  "inverse-surface": "#dae2fd",
+                  "inverse-on-surface": "#283044"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.125rem",
+                  "lg": "0.25rem",
+                  "xl": "0.5rem",
+                  "full": "0.75rem"
+          },
+          "spacing": {
+                  "row-height-standard": "40px",
+                  "gutter": "12px",
+                  "container-padding": "24px",
+                  "unit": "4px",
+                  "element-gap": "8px",
+                  "row-height-compact": "32px"
+          },
+          "fontFamily": {
+                  "body-sm": ["Inter"],
+                  "display-lg": ["Inter"],
+                  "label-caps": ["Space Grotesk"],
+                  "body-xs": ["Inter"],
+                  "headline-md": ["Inter"],
+                  "data-mono": ["Space Grotesk"]
+          },
+          "fontSize": {
+                  "body-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}],
+                  "display-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.06em", "fontWeight": "700"}],
+                  "body-xs": ["12px", {"lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400"}],
+                  "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                  "data-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body-sm antialiased">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-slate-900 dark:bg-[#0F172A] font-inter text-sm tracking-tight border-b border-slate-700 dark:border-[#334155] flex justify-between items-center h-14 px-6 w-full sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="text-lg font-bold tracking-tighter text-slate-50 dark:text-slate-50">ExtractEngine Pro</div>
+<nav class="flex gap-6 items-center h-full">
+<a class="text-slate-400 dark:text-slate-400 hover:text-slate-200 transition-colors" href="#">Dashboard</a>
+<a class="text-slate-400 dark:text-slate-400 hover:text-slate-200 transition-colors" href="#">Workspaces</a>
+<a class="text-sky-500 dark:text-[#0EA5E9] border-b-2 border-sky-500 pb-2" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-slate-800 dark:bg-[#1E293B] rounded px-3 py-1 gap-2 border border-slate-700 dark:border-[#334155]">
+<span class="material-symbols-outlined text-slate-400 text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-xs text-on-surface w-48" placeholder="Search extractions..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 font-semibold text-xs rounded active:scale-95 duration-150">New Extraction</button>
+</div>
+</header>
+<!-- SideNavBar (Shared Component) -->
+<aside class="bg-slate-900 dark:bg-[#0F172A] font-inter text-xs font-medium uppercase tracking-widest fixed left-0 top-0 h-full flex flex-col pt-16 z-40 w-60 border-r border-slate-700 dark:border-[#334155]">
+<div class="px-6 py-4 flex flex-col gap-1 border-b border-slate-700 dark:border-[#334155] mb-4">
+<div class="text-sky-500 text-[10px] tracking-widest mb-1">Core Engine</div>
+<div class="text-slate-400 text-[9px] lowercase opacity-60">v2.4.0-Stable</div>
+</div>
+<nav class="flex-1">
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+        Overview
+      </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">upload_file</span>
+        Upload
+      </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+        OCR Editor
+      </a>
+<a class="flex items-center gap-3 px-6 py-3 bg-slate-800 dark:bg-[#1E293B] text-sky-500 border-r-2 border-sky-500" href="#">
+<span class="material-symbols-outlined">photo_library</span>
+        Gallery
+      </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+        System Health
+      </a>
+</nav>
+<div class="mt-auto border-t border-slate-700 dark:border-[#334155] py-4">
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">terminal</span>
+        Logs
+      </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+        Support
+      </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-60 pt-6 min-h-screen">
+<div class="container-padding max-w-[1600px] mx-auto pb-12">
+<!-- Page Header & Filter Bar -->
+<section class="mb-8">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface">Results Gallery</h1>
+<p class="text-on-surface-variant font-body-sm mt-1">Review and manage successfully extracted table data from your engine history.</p>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Date Range</span>
+<select class="bg-surface-container-high border-outline border text-body-xs rounded px-3 py-1.5 focus:border-primary focus:ring-0 transition-colors w-40">
+<option>Last 24 Hours</option>
+<option>Last 7 Days</option>
+<option>Last 30 Days</option>
+<option>Custom Range</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Status</span>
+<select class="bg-surface-container-high border-outline border text-body-xs rounded px-3 py-1.5 focus:border-primary focus:ring-0 transition-colors w-32">
+<option>All Assets</option>
+<option>Verified</option>
+<option>Pending</option>
+<option>Flagged</option>
+</select>
+</div>
+<button class="bg-surface-container-highest border border-outline hover:border-primary-container text-on-surface flex items-center gap-2 px-4 py-2 mt-auto transition-all rounded active:scale-95">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+<span class="text-body-xs font-semibold">More Filters</span>
+</button>
+</div>
+</div>
+<!-- System Stats Bar -->
+<div class="grid grid-cols-4 gap-4 mb-8">
+<div class="bg-surface-container border border-outline-variant p-4 flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant">TOTAL EXTRACTIONS</span>
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-data-mono text-primary">12,482</span>
+<span class="text-[10px] text-tertiary font-bold flex items-center"><span class="material-symbols-outlined text-xs">trending_up</span>+12%</span>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant p-4 flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant">CONFIDENCE AVG</span>
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-data-mono text-on-surface">98.4%</span>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[98%]"></div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant p-4 flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant">QUEUE DEPTH</span>
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-data-mono text-on-surface">0</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-bold">STABLE</span>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant p-4 flex flex-col gap-1">
+<span class="text-label-caps font-label-caps text-on-surface-variant">EXPORT READY</span>
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-data-mono text-on-surface">1,042</span>
+<span class="material-symbols-outlined text-on-surface-variant text-lg">download</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid Gallery -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Gallery Card 1 -->
+<article class="bg-surface-container border border-outline-variant hover:border-primary/50 transition-all group overflow-hidden flex flex-col">
+<div class="aspect-video bg-surface-container-low overflow-hidden relative border-b border-outline-variant">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 grayscale" data-alt="Monochrome technical blueprint of complex architectural data table with clean lines and sharp contrast" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_yAbnk5OOQIq122ycs0iN8LIcTBK9MO6bfl5RTiMR4rPFI6XdQLp_kO0f3Z9r9p1I--VlAS1pwe1KcdZ7OgR_F5-KyjBbuQieF656Y45OaD4awaV27BbOi6rciJHLerfC3wjw8KA2-3BV7oUQHV54P9CGZ38j7-OELpc5i6YE7_oxw4yOrf6F3waNAI1oHME37FWDTnDsYVrC5GSyySE7RD8LIuIMo2kWoXf9bWE3wrWM9I8l8saIaorM4iWexOdLx2misShaJRg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute top-2 right-2">
+<span class="bg-tertiary/20 text-tertiary text-label-caps font-label-caps px-2 py-1 rounded">99.8% ACC</span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-3 flex-1">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-sm font-semibold text-on-surface truncate pr-4">Invoice_X-7729_Extraction</h3>
+<span class="material-symbols-outlined text-primary text-sm">verified</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">description</span>
+<span>Financial_Report_2024.pdf</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-data-mono uppercase">2023-10-24 14:22:05 UTC</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex gap-2 border-t border-outline-variant/30">
+<button class="flex-1 h-row-height-compact bg-primary text-on-primary font-bold text-label-caps rounded flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                DOWNLOAD CSV
+              </button>
+<button class="w-row-height-compact h-row-height-compact border border-outline text-on-surface flex items-center justify-center hover:bg-surface-container-high active:scale-[0.98] transition-all rounded">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Gallery Card 2 -->
+<article class="bg-surface-container border border-outline-variant hover:border-primary/50 transition-all group overflow-hidden flex flex-col">
+<div class="aspect-video bg-surface-container-low overflow-hidden relative border-b border-outline-variant">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 grayscale" data-alt="Digital scan of a data intensive financial ledger with multiple rows and columns on a dark textured paper" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7buFOra9tHjKpvFNgvBkXMch2HXWErJ1mIEoDdW-Xhygsy2Ffyt5nLLgRXFvGUNpYwyVPadoLOcY5bR9qmK7dotdHJfOnRFGEyCYgQYproOgOC2Go2IgPxlqijKp_s5JgTcrCj2Q9DMfrULJXEYc0HiaPsStKYL8FYC25NqggvSc1fl5njxYO2JtQ4xOUOB-7Ax5UFDGt6cyIXXd9dB4puky70ASI4RFcyuBWngZq2ggRUdMBBxX3z_aC0lcyHt-gD9vVjSFfsWs"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute top-2 right-2">
+<span class="bg-secondary-container text-secondary text-label-caps font-label-caps px-2 py-1 rounded">94.2% ACC</span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-3 flex-1">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-sm font-semibold text-on-surface truncate pr-4">Inventory_Audit_Log_B</h3>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">pending_actions</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">description</span>
+<span>Warehouse_Scan_v2.png</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-data-mono uppercase">2023-10-24 12:45:12 UTC</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex gap-2 border-t border-outline-variant/30">
+<button class="flex-1 h-row-height-compact bg-primary text-on-primary font-bold text-label-caps rounded flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                DOWNLOAD CSV
+              </button>
+<button class="w-row-height-compact h-row-height-compact border border-outline text-on-surface flex items-center justify-center hover:bg-surface-container-high active:scale-[0.98] transition-all rounded">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Gallery Card 3 -->
+<article class="bg-surface-container border border-outline-variant hover:border-primary/50 transition-all group overflow-hidden flex flex-col">
+<div class="aspect-video bg-surface-container-low overflow-hidden relative border-b border-outline-variant">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 grayscale" data-alt="Surgical close-up of spreadsheet data on a computer screen with visible pixels and technical glow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3JxNx9-kmnP84oMSz3KutgLyytGfsptmjSqO_x7wQtA0sAON62d6WU4EGvKTLeU1dezwCvfhSOF0TgdLM5T5vm_WgJEhB459FQv5LgKdzjDAbElHpRjK9abaws8pKpn22VbzNDj_3vdtZOqkG8MdUkQB6O-nnGm9zImF7eufa3oKN_RLFQjl_wfP95ftR0LtqC9hXokqrbfMJ9h7T29mHwSHI45JVKxNSIq-RFxQe1J1DbPYkDsBJULjoyOOKVEAjAxP1kezwPQk"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute top-2 right-2">
+<span class="bg-tertiary/20 text-tertiary text-label-caps font-label-caps px-2 py-1 rounded">98.1% ACC</span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-3 flex-1">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-sm font-semibold text-on-surface truncate pr-4">Shipping_Manifest_Z100</h3>
+<span class="material-symbols-outlined text-primary text-sm">verified</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">description</span>
+<span>Manifest_Final.pdf</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-data-mono uppercase">2023-10-24 09:15:30 UTC</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex gap-2 border-t border-outline-variant/30">
+<button class="flex-1 h-row-height-compact bg-primary text-on-primary font-bold text-label-caps rounded flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                DOWNLOAD CSV
+              </button>
+<button class="w-row-height-compact h-row-height-compact border border-outline text-on-surface flex items-center justify-center hover:bg-surface-container-high active:scale-[0.98] transition-all rounded">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Gallery Card 4 -->
+<article class="bg-surface-container border border-outline-variant hover:border-primary/50 transition-all group overflow-hidden flex flex-col">
+<div class="aspect-video bg-surface-container-low overflow-hidden relative border-b border-outline-variant">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 grayscale" data-alt="Macro photography of a printed chart with fine numerical data and dark gray ink textures" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8It5t7KThg03QkP-m9yKY0yWaOttJKzt0PKCeCrA8Xx7XW_c16sQGzgxqTgk3cpEM0waeqe03h6_0YSADjxGZA1KGc7WJasJOcn2fH3mfW0EZxnRJeEuHcYYrJPfrN4JBp-5q4pA2D4rb8iFjt7n7xNIPumT9_RiE-XUTqLRpys8OQNQ7jLlzwNA4QoEIqKAgxVXiDGkND9C33TSOJ5ad3mkkbu-fv_MDcVfL3gqlsklHCQ1qIz3xCQJswPTJJTzxuzWEIsQeHD4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute top-2 right-2">
+<span class="bg-error-container text-error text-label-caps font-label-caps px-2 py-1 rounded">62.5% LOW</span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-3 flex-1">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-sm font-semibold text-on-surface truncate pr-4">Legacy_Ledger_Handwritten</h3>
+<span class="material-symbols-outlined text-error text-sm">error</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">description</span>
+<span>Scan_0012.jpeg</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-data-mono uppercase">2023-10-23 23:59:59 UTC</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex gap-2 border-t border-outline-variant/30">
+<button class="flex-1 h-row-height-compact bg-primary text-on-primary font-bold text-label-caps rounded flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                DOWNLOAD CSV
+              </button>
+<button class="w-row-height-compact h-row-height-compact border border-outline text-on-surface flex items-center justify-center hover:bg-surface-container-high active:scale-[0.98] transition-all rounded">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Gallery Card 5 -->
+<article class="bg-surface-container border border-outline-variant hover:border-primary/50 transition-all group overflow-hidden flex flex-col">
+<div class="aspect-video bg-surface-container-low overflow-hidden relative border-b border-outline-variant">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 grayscale" data-alt="High density spreadsheet visualization on a black background with soft cyan highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTtTf4YvNEPwQGNXg0zJGQnEBN4itnzj-PGsNfb2qd3WVgbgi96xFRP-7e9ewVnof636oWfFpxF4XpUOoN0lsfHAGJzamcouUR3VvE-LqpOzPFltP6WsxRTgDPV0VdfjnTCYXcPWmZOYyS2-MEu78IT4APZDenZFNl3fjGZlyuQVnMYnOO78u0Zgf9dLJUPjmGfry3X8hssjeyu_qp8BoRlksmmNDdQR3jQ7hiQ_dDlqffSFpcD9RElxkIeQa9lxwZhKhSRweN2Cg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute top-2 right-2">
+<span class="bg-tertiary/20 text-tertiary text-label-caps font-label-caps px-2 py-1 rounded">99.1% ACC</span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-3 flex-1">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-sm font-semibold text-on-surface truncate pr-4">Tax_Summary_FY23</h3>
+<span class="material-symbols-outlined text-primary text-sm">verified</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">description</span>
+<span>IRS_Export_A.pdf</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-data-mono uppercase">2023-10-23 18:30:11 UTC</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex gap-2 border-t border-outline-variant/30">
+<button class="flex-1 h-row-height-compact bg-primary text-on-primary font-bold text-label-caps rounded flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                DOWNLOAD CSV
+              </button>
+<button class="w-row-height-compact h-row-height-compact border border-outline text-on-surface flex items-center justify-center hover:bg-surface-container-high active:scale-[0.98] transition-all rounded">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Gallery Card 6 -->
+<article class="bg-surface-container border border-outline-variant hover:border-primary/50 transition-all group overflow-hidden flex flex-col">
+<div class="aspect-video bg-surface-container-low overflow-hidden relative border-b border-outline-variant">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 grayscale" data-alt="Modern analytics dashboard interface with clean data tables and subtle blue accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy7Sm6YcGnw3qPHuwTsLKFELIC9I-KNkz0OeSzEgwKd-t-5nFVYR1_2EsVjHoYhDgN9QpfUxpyoqsNIADoFpKzyccgiXeCUVViHL2mJFHukBu1o2TtSoW6DvmRwHx44o04R_B9m9LT7PSGl2xRKIqxipYDpuMpZqpKVu7KmK7RZM8Zgmn34BmKdzjzAQUhauVtqdU3fw_A0NNujAHJhiWtAOXQhL2NoEHVeu4gFsVJLVm4YxFW_lnrV2A6vahTKvrpon1s0o5L9EU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute top-2 right-2">
+<span class="bg-tertiary/20 text-tertiary text-label-caps font-label-caps px-2 py-1 rounded">98.5% ACC</span>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-3 flex-1">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-sm font-semibold text-on-surface truncate pr-4">Web_Analytics_Sheet_4</h3>
+<span class="material-symbols-outlined text-primary text-sm">verified</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">description</span>
+<span>Dashboard_Metrics.csv</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant text-body-xs">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-data-mono uppercase">2023-10-23 15:12:44 UTC</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 flex gap-2 border-t border-outline-variant/30">
+<button class="flex-1 h-row-height-compact bg-primary text-on-primary font-bold text-label-caps rounded flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-sm">download</span>
+                DOWNLOAD CSV
+              </button>
+<button class="w-row-height-compact h-row-height-compact border border-outline text-on-surface flex items-center justify-center hover:bg-surface-container-high active:scale-[0.98] transition-all rounded">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+<!-- Pagination Footer -->
+<footer class="mt-12 flex justify-between items-center bg-surface-container-low border border-outline-variant px-6 h-14">
+<div class="text-body-xs text-on-surface-variant">
+          Showing <span class="text-on-surface font-semibold">1-6</span> of <span class="text-on-surface font-semibold">1,042</span> extractions
+        </div>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-primary border border-primary text-body-xs font-data-mono font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high text-body-xs font-data-mono">2</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high text-body-xs font-data-mono">3</button>
+<span class="px-2 text-on-surface-variant">...</span>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high text-body-xs font-data-mono">174</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-body-xs text-on-surface-variant">Page Size:</span>
+<select class="bg-transparent border-none text-body-xs text-on-surface font-semibold focus:ring-0 cursor-pointer">
+<option>12</option>
+<option selected="">24</option>
+<option>48</option>
+<option>100</option>
+</select>
+</div>
+</footer>
+</div>
+</main>
+<!-- Floating Action Button (Contextual) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-on-primary-container rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined text-[28px]">add</span>
+<span class="absolute right-full mr-4 bg-surface-bright text-on-surface px-3 py-1.5 rounded text-body-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">New Extraction</span>
+</button>
+</body></html>

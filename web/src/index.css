@@ -150,6 +150,8 @@ body {
 
 .header-nav {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -199,6 +201,20 @@ body {
   padding: 8px;
   min-width: 36px;
   justify-content: center;
+}
+
+.static-tool-shell {
+  flex: 1;
+  min-height: calc(100vh - 69px);
+  background: #020617;
+}
+
+.static-tool-frame {
+  width: 100%;
+  height: calc(100vh - 69px);
+  display: block;
+  border: 0;
+  background: #020617;
 }
 
 .editor-shell {

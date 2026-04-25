@@ -7,42 +7,40 @@ import ResultsView from './components/ResultsView'
 
 const API = ''  // same origin
 
+const TOOLS = [
+  { id: 'editor', label: 'Label Editor', subtitle: 'Dataset Label Editor' },
+  { id: 'extractor', label: 'Extractor', subtitle: 'Table Extractor' },
+  {
+    id: 'upload-tasks',
+    label: 'Upload Tasks',
+    subtitle: 'Upload Tasks',
+    url: '/stitch-tools/upload-tasks.html',
+  },
+  {
+    id: 'extraction-gallery',
+    label: 'Gallery',
+    subtitle: 'Extraction Gallery',
+    url: '/stitch-tools/extraction-gallery.html',
+  },
+  {
+    id: 'ocr-verification-editor',
+    label: 'OCR Verify',
+    subtitle: 'OCR Verification Editor',
+    url: '/stitch-tools/ocr-verification-editor.html',
+  },
+  {
+    id: 'system-dashboard',
+    label: 'Dashboard',
+    subtitle: 'System Dashboard',
+    url: '/stitch-tools/system-dashboard.html',
+  },
+]
+
 function App() {
   const [tool, setTool] = useState('editor') // editor | extractor
   const [view, setView] = useState('upload') // upload | processing | results
   const [jobs, setJobs] = useState([])
   const [activeJob, setActiveJob] = useState(null)
-
-  const handleUpload = useCallback(async (files) => {
-    const newJobs = []
-    for (const file of files) {
-      const fd = new FormData()
-      fd.append('file', file)
-      try {
-        const res = await fetch(`${API}/api/upload-and-process`, { method: 'POST', body: fd })
-        const data = await res.json()
-        newJobs.push({
-          id: data.job_id,
-          filename: data.filename,
-          status: 'processing',
-          annotation: null,
-          duration: null,
-          imageUrl: `${API}/api/image/${data.job_id}`,
-        })
-      } catch (err) {
-        console.error('Upload failed:', err)
-      }
-    }
-    setJobs(prev => [...newJobs, ...prev])
-    if (newJobs.length === 1) {
-      setActiveJob(newJobs[0])
-      setView('processing')
-      pollJob(newJobs[0].id)
-    } else if (newJobs.length > 1) {
-      setView('processing')
-      newJobs.forEach(j => pollJob(j.id))
-    }
-  }, [])
 
   const pollJob = useCallback((jobId) => {
     const interval = setInterval(async () => {
@@ -83,6 +81,37 @@ function App() {
     }, 1000)
   }, [])
 
+  const handleUpload = useCallback(async (files) => {
+    const newJobs = []
+    for (const file of files) {
+      const fd = new FormData()
+      fd.append('file', file)
+      try {
+        const res = await fetch(`${API}/api/upload-and-process`, { method: 'POST', body: fd })
+        const data = await res.json()
+        newJobs.push({
+          id: data.job_id,
+          filename: data.filename,
+          status: 'processing',
+          annotation: null,
+          duration: null,
+          imageUrl: `${API}/api/image/${data.job_id}`,
+        })
+      } catch (err) {
+        console.error('Upload failed:', err)
+      }
+    }
+    setJobs(prev => [...newJobs, ...prev])
+    if (newJobs.length === 1) {
+      setActiveJob(newJobs[0])
+      setView('processing')
+      pollJob(newJobs[0].id)
+    } else if (newJobs.length > 1) {
+      setView('processing')
+      newJobs.forEach(j => pollJob(j.id))
+    }
+  }, [pollJob])
+
   const openJob = useCallback((job) => {
     setActiveJob(job)
     if (job.status === 'done') {
@@ -94,9 +123,13 @@ function App() {
   }, [pollJob])
 
   const goHome = useCallback(() => {
+    setTool('editor')
     setView('upload')
     setActiveJob(null)
   }, [])
+
+  const activeTool = TOOLS.find(item => item.id === tool) ?? TOOLS[0]
+  const activeStaticTool = activeTool.url ? activeTool : null
 
   return (
     <div className="app-container">
@@ -105,18 +138,21 @@ function App() {
           <div className="header-logo">A</div>
           <div>
             <div className="header-title">Ag27</div>
-            <div className="header-subtitle">{tool === 'editor' ? 'Dataset Label Editor' : 'Table Extractor'}</div>
+            <div className="header-subtitle">{activeTool.subtitle}</div>
           </div>
         </div>
         <nav className="header-nav">
-          <button className={`btn btn-sm ${tool === 'editor' ? 'btn-primary' : ''}`} onClick={() => setTool('editor')}>
-            Label Editor
-          </button>
-          <button className={`btn btn-sm ${tool === 'extractor' ? 'btn-primary' : ''}`} onClick={() => setTool('extractor')}>
-            Extractor
-          </button>
+          {TOOLS.map(item => (
+            <button
+              key={item.id}
+              className={`btn btn-sm ${tool === item.id ? 'btn-primary' : ''}`}
+              onClick={() => setTool(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
           {tool === 'extractor' && jobs.filter(j => j.status === 'done').length > 0 && view !== 'upload' && (
-            <button className="btn btn-sm" onClick={goHome}>
+            <button className="btn btn-sm" onClick={() => setView('upload')}>
               ← New Upload
             </button>
           )}
@@ -128,7 +164,15 @@ function App() {
         </nav>
       </header>
 
-      {tool === 'editor' ? (
+      {activeStaticTool ? (
+        <main className="static-tool-shell">
+          <iframe
+            className="static-tool-frame"
+            src={activeStaticTool.url}
+            title={activeStaticTool.subtitle}
+          />
+        </main>
+      ) : tool === 'editor' ? (
         <DatasetEditor />
       ) : (
         <>

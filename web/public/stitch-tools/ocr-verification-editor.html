@@ -1,0 +1,347 @@
+<html><head><meta charset="utf-8"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0b1326;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3e4850;
+  }
+</style>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-container": "#171f33",
+          "surface-dim": "#0b1326",
+          "tertiary-container": "#00b17b",
+          "secondary-fixed": "#d3e4fe",
+          "surface-container-highest": "#2d3449",
+          "on-tertiary-fixed-variant": "#005236",
+          "inverse-primary": "#006591",
+          "on-error-container": "#ffdad6",
+          "on-error": "#690005",
+          "primary-fixed": "#c9e6ff",
+          "tertiary-fixed": "#6ffbbe",
+          "on-tertiary-fixed": "#002113",
+          "background": "#0b1326",
+          "surface-container-low": "#131b2e",
+          "primary-fixed-dim": "#89ceff",
+          "on-primary-container": "#003751",
+          "on-primary": "#00344d",
+          "surface-container-high": "#222a3d",
+          "outline-variant": "#3e4850",
+          "primary": "#89ceff",
+          "primary-container": "#0ea5e9",
+          "secondary-fixed-dim": "#b7c8e1",
+          "on-secondary-fixed-variant": "#38485d",
+          "on-secondary": "#213145",
+          "tertiary": "#4edea3",
+          "on-surface-variant": "#bec8d2",
+          "on-background": "#dae2fd",
+          "on-secondary-fixed": "#0b1c30",
+          "on-tertiary": "#003824",
+          "surface": "#0b1326",
+          "surface-bright": "#31394d",
+          "on-surface": "#dae2fd",
+          "tertiary-fixed-dim": "#4edea3",
+          "on-secondary-container": "#a9bad3",
+          "on-tertiary-container": "#003b26",
+          "error-container": "#93000a",
+          "surface-variant": "#2d3449",
+          "secondary": "#b7c8e1",
+          "outline": "#88929b",
+          "error": "#ffb4ab",
+          "on-primary-fixed": "#001e2f",
+          "on-primary-fixed-variant": "#004c6e",
+          "surface-tint": "#89ceff",
+          "surface-container-lowest": "#060e20",
+          "secondary-container": "#3a4a5f",
+          "inverse-surface": "#dae2fd",
+          "inverse-on-surface": "#283044"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "row-height-standard": "40px",
+          "gutter": "12px",
+          "container-padding": "24px",
+          "unit": "4px",
+          "element-gap": "8px",
+          "row-height-compact": "32px"
+        },
+        "fontFamily": {
+          "body-sm": ["Inter"],
+          "display-lg": ["Inter"],
+          "label-caps": ["Space Grotesk"],
+          "body-xs": ["Inter"],
+          "headline-md": ["Inter"],
+          "data-mono": ["Space Grotesk"]
+        },
+        "fontSize": {
+          "body-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "display-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+          "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.06em", "fontWeight": "700"}],
+          "body-xs": ["12px", {"lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400"}],
+          "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+          "data-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+        }
+      },
+    },
+  }
+</script>
+</head><body class="dark bg-background text-on-background font-body-sm min-h-screen flex flex-col">
+<!-- TopNavBar Implementation -->
+<nav class="bg-slate-900 dark:bg-[#0F172A] border-b border-slate-700 dark:border-[#334155] flex justify-between items-center h-14 px-6 w-full sticky top-0 z-50 font-inter text-sm tracking-tight">
+<div class="flex items-center gap-8">
+<span class="text-lg font-bold tracking-tighter text-slate-50 dark:text-slate-50">ExtractEngine Pro</span>
+<div class="flex gap-6 h-full items-center">
+<a class="text-slate-400 dark:text-slate-400 hover:text-slate-200 transition-colors" href="#">Dashboard</a>
+<a class="text-slate-400 dark:text-slate-400 hover:text-slate-200 transition-colors" href="#">Workspaces</a>
+<a class="text-slate-400 dark:text-slate-400 hover:text-slate-200 transition-colors" href="#">History</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-800 dark:hover:bg-[#1E293B] transition-all rounded active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 rounded-lg font-semibold active:scale-95 transition-all">
+        Finalize &amp; Export to CSV
+      </button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline">
+<img alt="User Profile" data-alt="professional headshot of a software engineer in a modern office setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRDRseqZPaQXGh_2XOLjP_8PeOJpTIR77jNCJir1ImNSHzJXBzHpf62-5SZTL6vXET5LLIgKC8qbEl1oKkwLNpY6ytIPY7zNR4rcsH_r5TPLa87ZbMa0lYH2Rk9zFn27SIak3JEwDJGc_RvyKFrGLVYn07QKhiZwiys7Iliaf4tY-AcnbvQ5BWYnQ0sKzh8KOrvRZoQymnFeQAZOEUkxdQWC_7hcmquvUlFNTaA6uRa7Jxif97jMPvHba7JLQm6TRT2gIS-Wb-toc"/>
+</div>
+</div>
+</nav>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar Implementation (Collapsed State Logic) -->
+<aside class="bg-slate-900 dark:bg-[#0F172A] border-r border-slate-700 dark:border-[#334155] w-60 flex flex-col pt-4 z-40">
+<div class="flex-1 space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Overview</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span class="font-label-caps text-label-caps">Upload</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 bg-slate-800 dark:bg-[#1E293B] text-sky-500 border-r-2 border-sky-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="font-label-caps text-label-caps">OCR Editor</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="photo_library">photo_library</span>
+<span class="font-label-caps text-label-caps">Gallery</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-400 dark:text-slate-400 hover:bg-slate-800/50 cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-caps text-label-caps">System Health</span>
+</div>
+</div>
+<div class="p-4 border-t border-outline-variant">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></div>
+<div>
+<div class="font-label-caps text-label-caps text-on-surface">Core Engine</div>
+<div class="text-[10px] text-slate-500">v2.4.0-Stable</div>
+</div>
+</div>
+<div class="flex items-center gap-3 px-2 py-2 text-slate-400 hover:text-slate-100 cursor-pointer transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="terminal">terminal</span>
+<span class="font-label-caps text-[10px]">Logs</span>
+</div>
+<div class="flex items-center gap-3 px-2 py-2 text-slate-400 hover:text-slate-100 cursor-pointer transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="contact_support">contact_support</span>
+<span class="font-label-caps text-[10px]">Support</span>
+</div>
+</div>
+</aside>
+<!-- Main Workspace: Split-View -->
+<main class="flex-1 flex overflow-hidden bg-background">
+<!-- Left Column: Source Image Panel -->
+<section class="w-[45%] border-r border-outline-variant flex flex-col bg-surface-container-low">
+<div class="h-10 px-4 flex items-center justify-between bg-surface-container border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="image">image</span>
+<span class="font-label-caps text-label-caps">Source: scan_invoice_882.png</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:text-white"><span class="material-symbols-outlined text-lg" data-icon="zoom_in">zoom_in</span></button>
+<button class="text-slate-400 hover:text-white"><span class="material-symbols-outlined text-lg" data-icon="zoom_out">zoom_out</span></button>
+<button class="text-slate-400 hover:text-white"><span class="material-symbols-outlined text-lg" data-icon="fullscreen">fullscreen</span></button>
+</div>
+</div>
+<div class="flex-1 overflow-auto p-8 flex justify-center items-start bg-[#060e20]">
+<div class="relative shadow-2xl border border-slate-700">
+<img alt="Document Source" class="max-w-none w-[600px] opacity-90" data-alt="high resolution scan of a complex financial ledger table with multiple columns and handwritten notes in the margins" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDio3DocXtOwehVwoVm5fxygy231A_3PmVuycvZenlus0wQnYv72swPQu2t0FnpCVawjzErzLQsiwWn7gTMQsqkIRk9rYjJkuh0T_p_Xde_Q1Fc5uONbDtwYtMi1eJwC8tMADrOW4JmquT1TF41YTT4SXzxffA_e6tHuiOqjGyAtWoyx9Mw8Tlhsj7YhA5UwAYU9WjmzP0BMqAWhWxowcVZYyF0WvPY8PsyGjMAFOKxYz8naFpk0-LugpOClpILsqySjEuXoHNcRW0"/>
+<!-- OCR Overlays -->
+<div class="absolute top-[120px] left-[40px] w-[120px] h-6 border-2 border-primary bg-primary/10 rounded-sm"></div>
+<div class="absolute top-[148px] left-[40px] w-[120px] h-6 border-2 border-error bg-error/10 rounded-sm"></div>
+<div class="absolute top-[176px] left-[40px] w-[120px] h-6 border-2 border-primary bg-primary/10 rounded-sm"></div>
+</div>
+</div>
+</section>
+<!-- Right Column: Editable Data Grid -->
+<section class="flex-1 flex flex-col bg-background">
+<div class="h-10 px-4 flex items-center justify-between bg-surface-container border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="grid_on">grid_on</span>
+<span class="font-label-caps text-label-caps">Verified Data Output</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="text-[10px] text-slate-400">95%+</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="text-[10px] text-slate-400">&lt;60%</span>
+</div>
+</div>
+</div>
+<!-- Data Grid Surface -->
+<div class="flex-1 overflow-auto">
+<table class="w-full border-collapse text-left">
+<thead class="sticky top-0 bg-surface-container-high z-10">
+<tr class="h-row-height-compact border-b border-outline">
+<th class="px-3 py-2 font-label-caps text-label-caps text-outline uppercase border-r border-outline-variant">ID</th>
+<th class="px-3 py-2 font-label-caps text-label-caps text-outline uppercase border-r border-outline-variant">Date</th>
+<th class="px-3 py-2 font-label-caps text-label-caps text-outline uppercase border-r border-outline-variant">Reference</th>
+<th class="px-3 py-2 font-label-caps text-label-caps text-outline uppercase border-r border-outline-variant">Category</th>
+<th class="px-3 py-2 font-label-caps text-label-caps text-outline uppercase">Amount (USD)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1: High Confidence -->
+<tr class="h-row-height-standard hover:bg-surface-container-high transition-colors group">
+<td class="px-3 border-r border-outline-variant font-data-mono text-data-mono">#882-01</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="2023-10-12"/>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<div class="flex items-center gap-2">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="INV-99201"/>
+<div class="w-1.5 h-1.5 rounded-full bg-tertiary flex-shrink-0" title="Confidence: 99%"></div>
+</div>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="Operations"/>
+</td>
+<td class="px-3 font-data-mono text-data-mono text-right">$1,240.00</td>
+</tr>
+<!-- Row 2: Low Confidence (Warning) -->
+<tr class="h-row-height-standard bg-error/5 hover:bg-error/10 transition-colors group">
+<td class="px-3 border-r border-outline-variant font-data-mono text-data-mono text-error">#882-02</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-error w-full py-1 text-error" type="text" value="2023-10-14"/>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<div class="flex items-center gap-2">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-error w-full py-1 text-error font-bold" type="text" value="S3RV-X02"/>
+<span class="material-symbols-outlined text-error text-sm" data-icon="warning">warning</span>
+</div>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="Maintenance"/>
+</td>
+<td class="px-3 font-data-mono text-data-mono text-right text-error">$421.5?</td>
+</tr>
+<!-- Row 3: Standard Confidence -->
+<tr class="h-row-height-standard hover:bg-surface-container-high transition-colors group">
+<td class="px-3 border-r border-outline-variant font-data-mono text-data-mono">#882-03</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="2023-10-15"/>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<div class="flex items-center gap-2">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="REF-4822"/>
+<div class="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" title="Confidence: 85%"></div>
+</div>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="Logistics"/>
+</td>
+<td class="px-3 font-data-mono text-data-mono text-right">$3,882.11</td>
+</tr>
+<!-- Row 4 -->
+<tr class="h-row-height-standard hover:bg-surface-container-high transition-colors group">
+<td class="px-3 border-r border-outline-variant font-data-mono text-data-mono">#882-04</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="2023-10-16"/>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<div class="flex items-center gap-2">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="PO-44102"/>
+<div class="w-1.5 h-1.5 rounded-full bg-tertiary flex-shrink-0"></div>
+</div>
+</td>
+<td class="px-3 border-r border-outline-variant">
+<input class="bg-transparent border-none focus:ring-1 focus:ring-primary w-full py-1 text-on-surface" type="text" value="Procurement"/>
+</td>
+<td class="px-3 font-data-mono text-data-mono text-right">$12,400.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer Stats Bar -->
+<div class="h-12 border-t border-outline-variant bg-surface-container px-4 flex items-center justify-between">
+<div class="flex gap-6">
+<div class="flex flex-col">
+<span class="text-[9px] font-label-caps text-outline uppercase">OCR Accuracy</span>
+<span class="text-xs font-bold text-tertiary">92.4% Avg</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[9px] font-label-caps text-outline uppercase">Low Conf Cells</span>
+<span class="text-xs font-bold text-error">4 Items</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[9px] font-label-caps text-outline uppercase">Total Rows</span>
+<span class="text-xs font-bold text-on-surface">148 Detected</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-outline-variant rounded hover:bg-slate-800 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="auto_fix">auto_fix</span>
+                Auto-Fix Formatting
+             </button>
+<button class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white text-slate-900 rounded hover:bg-slate-200 transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                Export CSV
+             </button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Floating Help Trigger -->
+<button class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-primary text-on-primary-container shadow-xl flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="question_answer">question_answer</span>
+</button>
+</body></html>

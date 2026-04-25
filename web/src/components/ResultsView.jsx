@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import ImageViewer from './ImageViewer'
 import TableGrid from './TableGrid'
 
