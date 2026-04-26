@@ -22,4 +22,5 @@ dependencies = [
     "uvicorn[standard]>=0.42.0",
     "python-multipart>=0.0.22",
     "aiofiles>=25.1.0",
+    "pymupdf>=1.24.0",
 ]

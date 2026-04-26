@@ -69,9 +69,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Paths (overridable via environment variables for containerisation)
 # ---------------------------------------------------------------------------
-TD_MODEL_DIR  = Path(os.environ.get("TD_MODEL_DIR",  r"A:\Ag27\TATR_TD"))
-TSR_MODEL_DIR = Path(os.environ.get("TSR_MODEL_DIR", r"A:\Ag27\TableStructureDetection"))
-OCR_MODEL_DIR = Path(os.environ.get("OCR_MODEL_DIR", r"A:\Ag27\ocr_models"))
+TD_MODEL_DIR  = Path(os.environ.get("TD_MODEL_DIR",  r"TATR_TD"))
+TSR_MODEL_DIR = Path(os.environ.get("TSR_MODEL_DIR", r"TableStructureRecognition"))
+OCR_MODEL_DIR = Path(os.environ.get("OCR_MODEL_DIR", r"ocr_models"))
 DET_MODEL_PATH = OCR_MODEL_DIR / "texdet.onnx"
 REC_MODEL_PATH = OCR_MODEL_DIR / "textrec.onnx"
 DICT_PATH      = OCR_MODEL_DIR / "dictionary.txt"
@@ -98,6 +98,10 @@ OCR_ASSIGN_USE_NEAREST  = os.environ.get("OCR_ASSIGN_USE_NEAREST", "1").strip().
 TSR_ENABLE_LEFT_SPANNER = os.environ.get("TSR_ENABLE_LEFT_SPANNER", "1").strip().lower() not in {"0", "false", "no", "off"}
 TSR_LEFT_SPANNER_MIN_SCORE = float(os.environ.get("TSR_LEFT_SPANNER_MIN_SCORE", "0.35"))
 TSR_LEFT_SPANNER_MIN_FILL_RATIO = float(os.environ.get("TSR_LEFT_SPANNER_MIN_FILL_RATIO", "0.98"))
+TSR_TEXT_ANCHORED_REBUILD = os.environ.get("TSR_TEXT_ANCHORED_REBUILD", "1").strip().lower() not in {"0", "false", "no", "off"}
+TSR_REBUILD_MIN_TEXT_LINES = max(2, int(os.environ.get("TSR_REBUILD_MIN_TEXT_LINES", "2")))
+TSR_REBUILD_GAP_RATIO = float(os.environ.get("TSR_REBUILD_GAP_RATIO", "0.55"))
+TSR_REBUILD_MIN_GAP_PX = float(os.environ.get("TSR_REBUILD_MIN_GAP_PX", "4.0"))
 PIPELINE_DEBUG_HEURISTICS = os.environ.get("PIPELINE_DEBUG_HEURISTICS", "0").strip().lower() not in {"0", "false", "no", "off"}
 
 STRUCTURE_LABELS = {
@@ -951,6 +955,76 @@ def _merge_ocr_items(items):
     return text, mean_score
 
 
+def _cluster_text_lines(ocr_items, gap_ratio=TSR_REBUILD_GAP_RATIO, min_gap_px=TSR_REBUILD_MIN_GAP_PX):
+    """Cluster OCR text boxes into horizontal text lines by Y-center proximity.
+
+    Returns a list of dicts sorted top-to-bottom by y_center, each with:
+        y_min, y_max, y_center, boxes (list of (bbox, text, score) items).
+    """
+    if not ocr_items:
+        return []
+    entries = []
+    for item in ocr_items:
+        box = item[0]
+        cy = (box[1] + box[3]) / 2.0
+        h = max(1.0, box[3] - box[1])
+        entries.append((cy, h, item))
+    entries.sort(key=lambda e: e[0])
+
+    heights = [e[1] for e in entries]
+    median_h = float(np.median(heights))
+    gap_threshold = max(min_gap_px, median_h * gap_ratio)
+
+    lines = []
+    cur_boxes = [entries[0][2]]
+    cur_cy_sum = entries[0][0]
+    cur_y_min = entries[0][2][0][1]
+    cur_y_max = entries[0][2][0][3]
+
+    for i in range(1, len(entries)):
+        cy, _h, item = entries[i]
+        cur_mean_cy = cur_cy_sum / len(cur_boxes)
+        if cy - cur_mean_cy > gap_threshold:
+            lines.append({
+                "y_min": cur_y_min, "y_max": cur_y_max,
+                "y_center": cur_cy_sum / len(cur_boxes),
+                "boxes": cur_boxes,
+            })
+            cur_boxes = [item]
+            cur_cy_sum = cy
+            cur_y_min = item[0][1]
+            cur_y_max = item[0][3]
+        else:
+            cur_boxes.append(item)
+            cur_cy_sum += cy
+            cur_y_min = min(cur_y_min, item[0][1])
+            cur_y_max = max(cur_y_max, item[0][3])
+
+    lines.append({
+        "y_min": cur_y_min, "y_max": cur_y_max,
+        "y_center": cur_cy_sum / len(cur_boxes),
+        "boxes": cur_boxes,
+    })
+    return lines
+
+
+def _rebuild_row_bounds_from_text_lines(text_lines, frame_top, frame_bottom):
+    """Derive row boundaries from text line clusters.
+
+    Places boundaries at the midpoint of each gap between consecutive text
+    lines.  The outer boundaries stay at the original frame edges.
+    """
+    if not text_lines:
+        return [float(frame_top), float(frame_bottom)]
+    bounds = [min(float(frame_top), float(text_lines[0]["y_min"]) - 1.0)]
+    for i in range(len(text_lines) - 1):
+        gap_top = text_lines[i]["y_max"]
+        gap_bottom = text_lines[i + 1]["y_min"]
+        bounds.append((gap_top + gap_bottom) / 2.0)
+    bounds.append(max(float(frame_bottom), float(text_lines[-1]["y_max"]) + 1.0))
+    return bounds
+
+
 def _ocr_box_area(box):
     return max(0.0, box[2] - box[0]) * max(0.0, box[3] - box[1])
 
@@ -1130,9 +1204,64 @@ class TableHeuristicRefiner:
         self.cells = passthrough + merged_cells
         self.notes.append(f"merged {len(merged_rows)} left-anchored spanner row(s)")
 
+    def _rebuild_cells_on_new_grid(self):
+        """Generate a simple NR×NC grid of 1×1 cells for the current bounds."""
+        nr = max(0, len(self.row_bounds) - 1)
+        nc = max(0, len(self.col_bounds) - 1)
+        return [
+            CellPrediction(
+                bbox=self._cell_bbox(ri, ci),
+                row=ri,
+                col=ci,
+                table_id=self.table_id,
+            )
+            for ri in range(nr)
+            for ci in range(nc)
+        ]
+
+    def _text_anchored_row_rebuild(self, ocr_items):
+        """Use OCR text-detection boxes to validate and correct TSR row boundaries.
+
+        Clusters OCR boxes into horizontal text lines, then rebuilds row
+        boundaries so they sit in the gaps between actual text — eliminating
+        hallucinated rows, fixing overlapping rows, and correcting misplaced
+        boundaries.
+        """
+        if not TSR_TEXT_ANCHORED_REBUILD or self.row_count < 1:
+            return
+
+        text_lines = _cluster_text_lines(ocr_items)
+        if len(text_lines) < TSR_REBUILD_MIN_TEXT_LINES:
+            return
+
+        old_nr = self.row_count
+        new_nr = len(text_lines)
+
+        frame_top = self.row_bounds[0]
+        frame_bottom = self.row_bounds[-1]
+        new_row_bounds = _rebuild_row_bounds_from_text_lines(
+            text_lines, frame_top, frame_bottom,
+        )
+
+        # If row count unchanged AND boundaries barely moved, skip rebuild
+        if new_nr == old_nr:
+            total_shift = sum(
+                abs(float(a) - float(b))
+                for a, b in zip(self.row_bounds, new_row_bounds)
+            )
+            if total_shift < 3.0:
+                return
+
+        self.row_bounds = tuple(round(float(v), 1) for v in new_row_bounds)
+        self.cells = self._rebuild_cells_on_new_grid()
+        self.notes.append(f"text-anchored row rebuild: {old_nr}\u2192{new_nr} rows")
+
     def refine(self, ocr_items):
         if not self.cells:
             return TableGrid(cells=[], row_bounds=self.row_bounds, col_bounds=self.col_bounds, notes=tuple(self.notes))
+        # Phase 1: Text-anchored row rebuild (corrects hallucinated/overlapping rows)
+        self._text_anchored_row_rebuild(ocr_items)
+        # Phase 2: OCR-based heuristics on the corrected grid
         assignments, _ = _compute_cell_assignments(self.cells, ocr_items)
         self._merge_left_anchored_spanners(assignments)
         self.cells.sort(key=_cell_sort_key)
@@ -1252,6 +1381,7 @@ def _serialize_cell(cell: CellPrediction) -> dict:
         "row_span": max(1, int(cell.row_span)),
         "col_span": max(1, int(cell.col_span)),
         "text": " ".join(str(cell.text).split()),
+        "ocr_score": round(float(cell.ocr_score), 4) if cell.ocr_score is not None else None,
     }
     if PIPELINE_DEBUG_HEURISTICS and cell.extra:
         payload["extra"] = cell.extra
@@ -1362,7 +1492,16 @@ def run_pipeline(image_path: str | Path) -> dict:
         tables.append({
             "table_id": ti["table_id"],
             "bbox": [round(float(v), 1) for v in ti["detection"].bbox],
+            "td_score": round(float(ti["detection"].score), 4) if ti["detection"].score is not None else None,
             "cells": [_serialize_cell(c) for c in ordered_cells],
+            "structures": [
+                {
+                    "label": s.label,
+                    "bbox": [round(float(v), 1) for v in s.bbox],
+                    "score": round(float(s.score), 4) if s.score is not None else None,
+                }
+                for s in ti.get("structures", [])
+            ],
             **({"heuristic_notes": list(ti["heuristic_notes"])} if PIPELINE_DEBUG_HEURISTICS and ti["heuristic_notes"] else {}),
         })
 

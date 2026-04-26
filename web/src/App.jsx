@@ -1,14 +1,14 @@
 import { useCallback, useState } from 'react'
 import './index.css'
-import DatasetEditor from './components/DatasetEditor'
 import UploadView from './components/UploadView'
 import ProcessingView from './components/ProcessingView'
 import ResultsView from './components/ResultsView'
+import HealthDashboard from './components/HealthDashboard'
 
 const API = ''  // same origin
 
 function App() {
-  const [tool, setTool] = useState('editor') // editor | extractor
+  const [tool, setTool] = useState('extractor') // extractor | health
   const [view, setView] = useState('upload') // upload | processing | results
   const [jobs, setJobs] = useState([])
   const [activeJob, setActiveJob] = useState(null)
@@ -21,6 +21,14 @@ function App() {
       try {
         const res = await fetch(`${API}/api/upload-and-process`, { method: 'POST', body: fd })
         const data = await res.json()
+        if (!res.ok) {
+          console.error(`Upload failed for ${file.name}:`, data)
+          continue
+        }
+        if (!data?.job_id) {
+          console.error(`Upload response missing job_id for ${file.name}:`, data)
+          continue
+        }
         newJobs.push({
           id: data.job_id,
           filename: data.filename,
@@ -32,6 +40,9 @@ function App() {
       } catch (err) {
         console.error('Upload failed:', err)
       }
+    }
+    if (newJobs.length === 0) {
+      return
     }
     setJobs(prev => [...newJobs, ...prev])
     if (newJobs.length === 1) {
@@ -101,19 +112,21 @@ function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <div className="header-brand" onClick={goHome} style={{ cursor: 'pointer' }}>
+        <div className="header-brand" onClick={() => { setTool('extractor'); goHome() }} style={{ cursor: 'pointer' }}>
           <div className="header-logo">A</div>
           <div>
             <div className="header-title">Ag27</div>
-            <div className="header-subtitle">{tool === 'editor' ? 'Dataset Label Editor' : 'Table Extractor'}</div>
+            <div className="header-subtitle">
+              {tool === 'health' ? 'System Health' : 'Table Extractor'}
+            </div>
           </div>
         </div>
         <nav className="header-nav">
-          <button className={`btn btn-sm ${tool === 'editor' ? 'btn-primary' : ''}`} onClick={() => setTool('editor')}>
-            Label Editor
-          </button>
           <button className={`btn btn-sm ${tool === 'extractor' ? 'btn-primary' : ''}`} onClick={() => setTool('extractor')}>
             Extractor
+          </button>
+          <button className={`btn btn-sm ${tool === 'health' ? 'btn-primary' : ''}`} onClick={() => setTool('health')}>
+            📊 Health
           </button>
           {tool === 'extractor' && jobs.filter(j => j.status === 'done').length > 0 && view !== 'upload' && (
             <button className="btn btn-sm" onClick={goHome}>
@@ -121,15 +134,15 @@ function App() {
             </button>
           )}
           {tool === 'extractor' && jobs.length > 0 && (
-            <button className="btn btn-sm" onClick={() => setView('upload')}>
+            <button className="btn btn-sm" onClick={() => { setTool('extractor'); setView('upload') }}>
               {jobs.filter(j => j.status === 'done').length} processed
             </button>
           )}
         </nav>
       </header>
 
-      {tool === 'editor' ? (
-        <DatasetEditor />
+      {tool === 'health' ? (
+        <HealthDashboard />
       ) : (
         <>
           {view === 'upload' && (

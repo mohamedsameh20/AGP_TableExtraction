@@ -13,6 +13,8 @@ import shutil
 import threading
 import time
 import uuid
+import zipfile
+from collections import deque
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -47,82 +49,33 @@ app.add_middleware(
 UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "./uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-EDITOR_DATASET_PATH = Path(os.environ.get("EDITOR_DATASET_PATH", "Phase3/Phase3_labels.json"))
-EDITOR_IMAGES_DIR = Path(os.environ.get("EDITOR_IMAGES_DIR", str(EDITOR_DATASET_PATH.parent / "Images")))
-_editor_lock = threading.Lock()
+# ---------------------------------------------------------------------------
+# Health Metrics (in-memory)
+# ---------------------------------------------------------------------------
+_server_start_time = time.time()
+_health_lock = threading.Lock()
+_health_metrics: dict[str, Any] = {
+    "total_jobs": 0,
+    "successful_jobs": 0,
+    "failed_jobs": 0,
+    "latencies": deque(maxlen=500),
+    "recent_errors": deque(maxlen=50),
+}
 
 
-class EditorAnnotationPayload(BaseModel):
-    id: int | None = None
-    image_id: int | None = None
-    category_id: int
-    bbox: list[float] = Field(min_length=4, max_length=4)
-    iscrowd: int = 0
-    ignore: int = 0
+def _record_job_success(job_id: str, duration: float):
+    with _health_lock:
+        _health_metrics["total_jobs"] += 1
+        _health_metrics["successful_jobs"] += 1
+        _health_metrics["latencies"].append({"job_id": job_id, "duration": duration, "timestamp": time.time()})
 
 
-class EditorSaveRequest(BaseModel):
-    annotations: list[EditorAnnotationPayload]
+def _record_job_failure(job_id: str, error: str):
+    with _health_lock:
+        _health_metrics["total_jobs"] += 1
+        _health_metrics["failed_jobs"] += 1
+        _health_metrics["recent_errors"].append({"job_id": job_id, "error": error, "timestamp": time.time()})
 
-
-def _ensure_editor_dataset_exists() -> None:
-    if not EDITOR_DATASET_PATH.exists():
-        raise HTTPException(404, f"Editor dataset not found: {EDITOR_DATASET_PATH}")
-    if not EDITOR_IMAGES_DIR.exists():
-        raise HTTPException(404, f"Editor images directory not found: {EDITOR_IMAGES_DIR}")
-
-
-def _load_editor_dataset() -> dict[str, Any]:
-    _ensure_editor_dataset_exists()
-    return json.loads(EDITOR_DATASET_PATH.read_text(encoding="utf-8"))
-
-
-def _write_editor_dataset(payload: dict[str, Any]) -> None:
-    backup_path = EDITOR_DATASET_PATH.with_name(f"{EDITOR_DATASET_PATH.stem}.backup{EDITOR_DATASET_PATH.suffix}")
-    if not backup_path.exists():
-        shutil.copy2(EDITOR_DATASET_PATH, backup_path)
-
-    temp_path = EDITOR_DATASET_PATH.with_suffix(f"{EDITOR_DATASET_PATH.suffix}.tmp")
-    temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    temp_path.replace(EDITOR_DATASET_PATH)
-
-
-def _editor_indexes(dataset: dict[str, Any]) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, list[dict[str, Any]]]]:
-    images_by_id = {int(image["id"]): image for image in dataset.get("images", [])}
-    categories_by_id = {int(category["id"]): category for category in dataset.get("categories", [])}
-    annotations_by_image: dict[int, list[dict[str, Any]]] = {}
-    for annotation in dataset.get("annotations", []):
-        annotations_by_image.setdefault(int(annotation["image_id"]), []).append(annotation)
-    return images_by_id, categories_by_id, annotations_by_image
-
-
-def _normalize_bbox(bbox: list[float], width: float, height: float) -> list[float]:
-    x, y, w, h = [float(value) for value in bbox]
-    if w < 0:
-        x += w
-        w = abs(w)
-    if h < 0:
-        y += h
-        h = abs(h)
-    x = max(0.0, min(x, width))
-    y = max(0.0, min(y, height))
-    w = max(1.0, min(w, max(1.0, width - x)))
-    h = max(1.0, min(h, max(1.0, height - y)))
-    return [round(x, 2), round(y, 2), round(w, 2), round(h, 2)]
-
-
-def _serialize_editor_annotation(annotation: dict[str, Any], category_name: str) -> dict[str, Any]:
-    bbox = [round(float(value), 2) for value in annotation.get("bbox", [0, 0, 0, 0])]
-    return {
-        "id": int(annotation["id"]),
-        "image_id": int(annotation["image_id"]),
-        "category_id": int(annotation["category_id"]),
-        "category_name": category_name,
-        "bbox": bbox,
-        "area": round(float(annotation.get("area", bbox[2] * bbox[3])), 2),
-        "iscrowd": int(annotation.get("iscrowd", 0)),
-        "ignore": int(annotation.get("ignore", 0)),
-    }
 
 # ---------------------------------------------------------------------------
 # Job store (in-memory for single-process deployment)
@@ -136,6 +89,30 @@ class JobStatus(str, Enum):
 
 
 jobs: dict[str, dict[str, Any]] = {}
+
+# ---------------------------------------------------------------------------
+# PDF Conversion (pymupdf/fitz)
+# ---------------------------------------------------------------------------
+
+def _convert_pdf_to_images(pdf_path: Path, output_dir: Path, dpi: int = 200) -> list[Path]:
+    """Convert a PDF file to a list of PNG images using pymupdf."""
+    import fitz  # pymupdf
+
+    doc = fitz.open(str(pdf_path))
+    image_paths: list[Path] = []
+    zoom = dpi / 72.0
+    mat = fitz.Matrix(zoom, zoom)
+
+    for page_idx in range(len(doc)):
+        page = doc[page_idx]
+        pix = page.get_pixmap(matrix=mat)
+        img_path = output_dir / f"page_{page_idx:03d}.png"
+        pix.save(str(img_path))
+        image_paths.append(img_path)
+
+    doc.close()
+    return image_paths
+
 
 # ---------------------------------------------------------------------------
 # Pipeline runner (background thread)
@@ -162,26 +139,72 @@ def _run_pipeline_thread(job_id: str):
     job = jobs[job_id]
     job["status"] = JobStatus.PROCESSING
     job["started_at"] = time.time()
-    image_path = job["image_path"]
 
-    logger.info("Starting pipeline for job %s (%s)", job_id, image_path)
+    logger.info("Starting pipeline for job %s", job_id)
 
     try:
-        # Serialize pipeline calls to avoid VRAM contention
         with _pipeline_lock:
             from pipeline import run_pipeline
-            annotation = run_pipeline(image_path)
+            from PIL import Image
 
-        job["annotation"] = annotation
+            image_paths = job.get("image_paths", [job["image_path"]])
+            all_annotations: list[dict] = []
+            page_count = len(image_paths)
+
+            for page_idx, img_path in enumerate(image_paths):
+                logger.info("Job %s: processing page %d/%d (%s)", job_id, page_idx + 1, page_count, img_path)
+                annotation = run_pipeline(img_path)
+                # Tag each table with page info
+                for table in annotation.get("tables", []):
+                    table["page"] = page_idx
+                all_annotations.append(annotation)
+
+            # Merge annotations across pages
+            merged_tables = []
+            global_table_id = 0
+            for page_idx, ann in enumerate(all_annotations):
+                for table in ann.get("tables", []):
+                    table["table_id"] = global_table_id
+                    merged_tables.append(table)
+                    global_table_id += 1
+
+            first_ann = all_annotations[0] if all_annotations else {}
+            merged_annotation = {
+                "source_image": job["image_name"],
+                "image_size": first_ann.get("image_size", [0, 0]),
+                "page_count": page_count,
+                "tables": merged_tables,
+            }
+
+            # Save table crops
+            job_dir = Path(job["image_path"]).parent
+            for table in merged_tables:
+                page_idx = table.get("page", 0)
+                page_img_path = image_paths[page_idx] if page_idx < len(image_paths) else image_paths[0]
+                pil = Image.open(page_img_path).convert("RGB")
+                bbox = table["bbox"]
+                x1, y1, x2, y2 = [int(v) for v in bbox]
+                w, h = pil.size
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(w, x2), min(h, y2)
+                if x2 > x1 and y2 > y1:
+                    crop = pil.crop((x1, y1, x2, y2))
+                    crop_path = job_dir / f"table_{table['table_id']}.png"
+                    crop.save(str(crop_path))
+
+        job["annotation"] = merged_annotation
         job["status"] = JobStatus.DONE
         job["finished_at"] = time.time()
         job["duration"] = round(job["finished_at"] - job["started_at"], 2)
         logger.info("Job %s done in %.1fs", job_id, job["duration"])
+        _record_job_success(job_id, job["duration"])
+
     except Exception as e:
         logger.exception("Job %s failed", job_id)
         job["status"] = JobStatus.ERROR
         job["error"] = str(e)
         job["finished_at"] = time.time()
+        _record_job_failure(job_id, str(e))
 
 
 def _start_pipeline(job_id: str):
@@ -194,12 +217,17 @@ def _start_pipeline(job_id: str):
 # API Endpoints
 # ---------------------------------------------------------------------------
 
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"}
+PDF_EXTS = {".pdf"}
+ACCEPTED_EXTS = IMAGE_EXTS | PDF_EXTS
+
+
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
-    """Upload an image and get a job_id back."""
+    """Upload an image or PDF and get a job_id back."""
     ext = Path(file.filename or "image.jpg").suffix.lower()
-    if ext not in {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"}:
-        raise HTTPException(400, f"Unsupported file type: {ext}")
+    if ext not in ACCEPTED_EXTS:
+        raise HTTPException(400, f"Unsupported file type: {ext}. Accepted: {', '.join(sorted(ACCEPTED_EXTS))}")
 
     job_id = str(uuid.uuid4())[:12]
     job_dir = UPLOAD_DIR / job_id
@@ -211,11 +239,27 @@ async def upload_image(file: UploadFile = File(...)):
     with open(dest, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
+    # For PDFs, convert to images
+    is_pdf = ext in PDF_EXTS
+    image_paths: list[str] = []
+    if is_pdf:
+        try:
+            pages = _convert_pdf_to_images(dest, job_dir)
+            image_paths = [str(p) for p in pages]
+            primary_image = str(pages[0]) if pages else str(dest)
+        except Exception as e:
+            raise HTTPException(400, f"Failed to convert PDF: {e}")
+    else:
+        primary_image = str(dest)
+        image_paths = [str(dest)]
+
     jobs[job_id] = {
         "id": job_id,
         "status": JobStatus.QUEUED,
-        "image_path": str(dest),
+        "image_path": primary_image,
+        "image_paths": image_paths,
         "image_name": safe_name,
+        "is_pdf": is_pdf,
         "annotation": None,
         "error": None,
         "created_at": time.time(),
@@ -224,7 +268,7 @@ async def upload_image(file: UploadFile = File(...)):
         "duration": None,
     }
 
-    return {"job_id": job_id, "filename": safe_name}
+    return {"job_id": job_id, "filename": safe_name, "is_pdf": is_pdf, "page_count": len(image_paths)}
 
 
 @app.post("/api/process/{job_id}")
@@ -243,11 +287,11 @@ async def process_image(job_id: str):
 
 @app.post("/api/upload-and-process")
 async def upload_and_process(file: UploadFile = File(...)):
-    """Upload an image and immediately start processing it."""
+    """Upload an image/PDF and immediately start processing it."""
     result = await upload_image(file)
     job_id = result["job_id"]
     _start_pipeline(job_id)
-    return {"job_id": job_id, "filename": result["filename"], "status": "queued"}
+    return {"job_id": job_id, "filename": result["filename"], "status": "queued", "page_count": result.get("page_count", 1)}
 
 
 @app.get("/api/status/{job_id}")
@@ -281,15 +325,69 @@ async def get_results(job_id: str):
     }
 
 
+@app.patch("/api/results/{job_id}/cells")
+async def edit_cell(job_id: str, payload: CellEditRequest):
+    """Edit a cell's text in the annotation (preview/edit feature)."""
+    if job_id not in jobs:
+        raise HTTPException(404, "Job not found")
+    job = jobs[job_id]
+    if job["status"] != JobStatus.DONE:
+        raise HTTPException(400, "Job not done yet")
+
+    annotation = job["annotation"]
+    for table in annotation.get("tables", []):
+        if table["table_id"] == payload.table_id:
+            for cell in table.get("cells", []):
+                if cell["row"] == payload.row and cell["col"] == payload.col:
+                    cell["text"] = payload.text
+                    return {"ok": True, "table_id": payload.table_id, "row": payload.row, "col": payload.col, "text": payload.text}
+            raise HTTPException(404, f"Cell ({payload.row}, {payload.col}) not found in table {payload.table_id}")
+    raise HTTPException(404, f"Table {payload.table_id} not found")
+
+
 @app.get("/api/image/{job_id}")
 async def get_image(job_id: str):
-    """Serve the original uploaded image."""
+    """Serve the original uploaded image (or first page for PDFs)."""
     if job_id not in jobs:
         raise HTTPException(404, "Job not found")
     image_path = Path(jobs[job_id]["image_path"])
     if not image_path.exists():
         raise HTTPException(404, "Image file not found")
-    return FileResponse(image_path, media_type="image/jpeg")
+    return FileResponse(image_path, media_type="image/png")
+
+
+@app.get("/api/table-crop/{job_id}/{table_id}")
+async def get_table_crop(job_id: str, table_id: int):
+    """Serve a cropped table image."""
+    if job_id not in jobs:
+        raise HTTPException(404, "Job not found")
+    job_dir = Path(jobs[job_id]["image_path"]).parent
+    crop_path = job_dir / f"table_{table_id}.png"
+    if not crop_path.exists():
+        raise HTTPException(404, f"Table crop {table_id} not found")
+    return FileResponse(crop_path, media_type="image/png", filename=f"table_{table_id}.png")
+
+
+@app.get("/api/table-crops/{job_id}")
+async def get_table_crops_zip(job_id: str):
+    """Download all table crops as a ZIP file."""
+    if job_id not in jobs:
+        raise HTTPException(404, "Job not found")
+    job = jobs[job_id]
+    job_dir = Path(job["image_path"]).parent
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for crop_file in sorted(job_dir.glob("table_*.png")):
+            zf.write(crop_file, crop_file.name)
+    buf.seek(0)
+
+    stem = Path(job["image_name"]).stem
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{stem}_table_crops.zip"'},
+    )
 
 
 @app.get("/api/export/{job_id}")
@@ -304,7 +402,7 @@ async def export_results(job_id: str, format: str = "json"):
     annotation = job["annotation"]
     stem = Path(job["image_name"]).stem
 
-    from export import export_csv, export_excel, export_html, export_json
+    from export import export_csv_all, export_excel, export_html, export_json
 
     if format == "json":
         content = export_json(annotation)
@@ -321,10 +419,9 @@ async def export_results(job_id: str, format: str = "json"):
             headers={"Content-Disposition": f'attachment; filename="{stem}.html"'},
         )
     elif format == "csv":
-        tables = annotation.get("tables", [])
-        if not tables:
+        content = export_csv_all(annotation)
+        if not content:
             raise HTTPException(400, "No tables in annotation")
-        content = export_csv(annotation, tables[0]["table_id"])
         return StreamingResponse(
             io.BytesIO(content.encode("utf-8")),
             media_type="text/csv",
@@ -356,144 +453,48 @@ async def list_jobs():
     ]
 
 
-@app.get("/api/editor/meta")
-async def get_editor_meta():
-    with _editor_lock:
-        dataset = _load_editor_dataset()
-        images_by_id, categories_by_id, annotations_by_image = _editor_indexes(dataset)
+# ---------------------------------------------------------------------------
+# Health Monitoring API
+# ---------------------------------------------------------------------------
 
-        images = []
-        for image in dataset.get("images", []):
-            image_id = int(image["id"])
-            annotations = annotations_by_image.get(image_id, [])
-            counts: dict[str, int] = {}
-            for annotation in annotations:
-                category_name = categories_by_id.get(int(annotation["category_id"]), {}).get("name", "unknown")
-                counts[category_name] = counts.get(category_name, 0) + 1
-            images.append(
-                {
-                    "id": image_id,
-                    "file_name": image["file_name"],
-                    "width": int(image["width"]),
-                    "height": int(image["height"]),
-                    "annotation_count": len(annotations),
-                    "counts_by_category": counts,
-                }
-            )
+@app.get("/api/health")
+async def get_health():
+    """Return aggregated health metrics for the monitoring dashboard."""
+    import statistics
 
-        return {
-            "dataset_path": str(EDITOR_DATASET_PATH),
-            "images_dir": str(EDITOR_IMAGES_DIR),
-            "image_count": len(images_by_id),
-            "annotation_count": len(dataset.get("annotations", [])),
-            "categories": dataset.get("categories", []),
-            "images": images,
+    with _health_lock:
+        total = _health_metrics["total_jobs"]
+        success = _health_metrics["successful_jobs"]
+        failed = _health_metrics["failed_jobs"]
+        latencies = [entry["duration"] for entry in _health_metrics["latencies"]]
+        recent_errors = list(_health_metrics["recent_errors"])
+
+    uptime = time.time() - _server_start_time
+    success_rate = round(success / total * 100, 1) if total > 0 else 0.0
+    failure_rate = round(failed / total * 100, 1) if total > 0 else 0.0
+
+    lat_stats = {}
+    if latencies:
+        sorted_lat = sorted(latencies)
+        lat_stats = {
+            "avg": round(statistics.mean(sorted_lat), 2),
+            "min": round(sorted_lat[0], 2),
+            "max": round(sorted_lat[-1], 2),
+            "p50": round(sorted_lat[len(sorted_lat) // 2], 2),
+            "p95": round(sorted_lat[int(len(sorted_lat) * 0.95)], 2) if len(sorted_lat) >= 2 else round(sorted_lat[-1], 2),
         }
 
-
-@app.get("/api/editor/image/{image_id}")
-async def get_editor_image(image_id: int):
-    with _editor_lock:
-        dataset = _load_editor_dataset()
-        images_by_id, categories_by_id, annotations_by_image = _editor_indexes(dataset)
-        image = images_by_id.get(image_id)
-        if not image:
-            raise HTTPException(404, f"Image id {image_id} not found in editor dataset")
-
-        annotations = [
-            _serialize_editor_annotation(
-                annotation,
-                categories_by_id.get(int(annotation["category_id"]), {}).get("name", "unknown"),
-            )
-            for annotation in annotations_by_image.get(image_id, [])
-        ]
-        annotations.sort(key=lambda item: (item["category_id"], item["id"]))
-
-        image_path = EDITOR_IMAGES_DIR / str(image["file_name"])
-        if not image_path.exists():
-            raise HTTPException(404, f"Image file not found: {image_path}")
-
-        return {
-            "image": {
-                "id": int(image["id"]),
-                "file_name": image["file_name"],
-                "width": int(image["width"]),
-                "height": int(image["height"]),
-                "image_url": f"/api/editor/assets/{image['file_name']}",
-            },
-            "annotations": annotations,
-        }
-
-
-@app.get("/api/editor/assets/{file_name:path}")
-async def get_editor_asset(file_name: str):
-    image_path = EDITOR_IMAGES_DIR / file_name
-    if not image_path.exists() or not image_path.is_file():
-        raise HTTPException(404, f"Image file not found: {image_path}")
-    return FileResponse(image_path)
-
-
-@app.post("/api/editor/image/{image_id}")
-async def save_editor_image(image_id: int, payload: EditorSaveRequest):
-    with _editor_lock:
-        dataset = _load_editor_dataset()
-        images_by_id, categories_by_id, _ = _editor_indexes(dataset)
-        image = images_by_id.get(image_id)
-        if not image:
-            raise HTTPException(404, f"Image id {image_id} not found in editor dataset")
-
-        valid_category_ids = set(categories_by_id)
-        width = float(image["width"])
-        height = float(image["height"])
-        next_annotation_id = max((int(item["id"]) for item in dataset.get("annotations", [])), default=0) + 1
-
-        saved_annotations: list[dict[str, Any]] = []
-        seen_ids: set[int] = set()
-        for item in payload.annotations:
-            if int(item.category_id) not in valid_category_ids:
-                raise HTTPException(400, f"Unknown category id: {item.category_id}")
-
-            normalized_bbox = _normalize_bbox(item.bbox, width=width, height=height)
-            annotation_id = int(item.id) if item.id is not None else next_annotation_id
-            if item.id is None:
-                next_annotation_id += 1
-            if annotation_id in seen_ids:
-                raise HTTPException(400, f"Duplicate annotation id in payload: {annotation_id}")
-            seen_ids.add(annotation_id)
-
-            saved_annotations.append(
-                {
-                    "id": annotation_id,
-                    "image_id": image_id,
-                    "category_id": int(item.category_id),
-                    "bbox": normalized_bbox,
-                    "area": round(normalized_bbox[2] * normalized_bbox[3], 2),
-                    "iscrowd": int(item.iscrowd),
-                    "ignore": int(item.ignore),
-                }
-            )
-
-        preserved_annotations = [
-            annotation
-            for annotation in dataset.get("annotations", [])
-            if int(annotation["image_id"]) != image_id
-        ]
-        dataset["annotations"] = preserved_annotations + saved_annotations
-        dataset["annotations"].sort(key=lambda item: (int(item["image_id"]), int(item["id"])))
-        _write_editor_dataset(dataset)
-
-        return {
-            "ok": True,
-            "image_id": image_id,
-            "saved_count": len(saved_annotations),
-            "annotations": [
-                _serialize_editor_annotation(
-                    annotation,
-                    categories_by_id[int(annotation["category_id"])]["name"],
-                )
-                for annotation in saved_annotations
-            ],
-        }
+    return {
+        "uptime_seconds": round(uptime, 0),
+        "total_jobs": total,
+        "successful_jobs": success,
+        "failed_jobs": failed,
+        "success_rate": success_rate,
+        "failure_rate": failure_rate,
+        "latency": lat_stats,
+        "recent_errors": recent_errors[-10:],
+        "active_jobs": sum(1 for j in jobs.values() if j["status"] in (JobStatus.QUEUED, JobStatus.PROCESSING)),
+    }
 
 
 # ---------------------------------------------------------------------------

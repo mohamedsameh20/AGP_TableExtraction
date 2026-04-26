@@ -5,10 +5,10 @@ export default function UploadView({ onUpload, jobs, onOpenJob }) {
   const fileRef = useRef()
 
   const handleFiles = useCallback((files) => {
-    const imageFiles = Array.from(files).filter(f =>
-      /\.(jpe?g|png|bmp|tiff?)$/i.test(f.name)
+    const accepted = Array.from(files).filter(f =>
+      /\.(jpe?g|png|bmp|tiff?|pdf)$/i.test(f.name)
     )
-    if (imageFiles.length > 0) onUpload(imageFiles)
+    if (accepted.length > 0) onUpload(accepted)
   }, [onUpload])
 
   const onDrop = useCallback((e) => {
@@ -27,7 +27,7 @@ export default function UploadView({ onUpload, jobs, onOpenJob }) {
             Extract Tables with <span className="gradient-text">AI Precision</span>
           </h1>
           <p>
-            Upload document images and let our 5-phase pipeline detect tables,
+            Upload document images or PDFs and let our 5-phase pipeline detect tables,
             recognize structure, perform OCR, and extract editable data — all in seconds.
           </p>
         </div>
@@ -40,12 +40,12 @@ export default function UploadView({ onUpload, jobs, onOpenJob }) {
           onClick={() => fileRef.current?.click()}
         >
           <div className="upload-zone-icon">📄</div>
-          <h3>Drop images here or click to browse</h3>
-          <p>Supports JPG, PNG, BMP, TIFF — batch upload enabled</p>
+          <h3>Drop files here or click to browse</h3>
+          <p>Supports JPG, PNG, BMP, TIFF, and PDF — batch upload enabled</p>
           <input
             ref={fileRef}
             type="file"
-            accept=".jpg,.jpeg,.png,.bmp,.tiff,.tif"
+            accept=".jpg,.jpeg,.png,.bmp,.tiff,.tif,.pdf"
             multiple
             onChange={(e) => handleFiles(e.target.files)}
           />
@@ -70,9 +70,9 @@ export default function UploadView({ onUpload, jobs, onOpenJob }) {
       {doneJobs.length > 0 && (
         <section className="jobs-section">
           <div className="jobs-header">
-            <h2>Processed Images</h2>
+            <h2>Processed Files</h2>
             <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-              {doneJobs.length} image{doneJobs.length !== 1 ? 's' : ''}
+              {doneJobs.length} file{doneJobs.length !== 1 ? 's' : ''}
             </span>
           </div>
           <div className="jobs-grid">
