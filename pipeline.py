@@ -79,11 +79,11 @@ DICT_PATH      = OCR_MODEL_DIR / "dictionary.txt"
 # ---------------------------------------------------------------------------
 # Thresholds & constants
 # ---------------------------------------------------------------------------
-TD_CONF_THRESHOLD       = 0.75
+TD_CONF_THRESHOLD       = 0.55
 TD_NMS_IOU              = 0.5
 TSR_CONF_THRESHOLD      = 0.5
 TSR_NMS_IOU             = 0.35
-PADDING_PCT             = 0.02
+PADDING_PCT             = 0.04
 TSR_SPAN_OVERLAP_THRESH = 0.25
 CELL_OCR_SCORE_THRESHOLD = 0.35
 OCR_REC_BATCH_NUM       = max(1, int(os.environ.get("OCR_REC_BATCH_NUM", "32")))
@@ -108,12 +108,24 @@ STRUCTURE_LABELS = {
     1: "table column",
     2: "table row",
     3: "table column header",
-    4: "table projected row header",
-    5: "table spanning cell",
+    4: "table spanning cell",
 }
 STRUCTURE_COLUMN_LABELS = {"table column"}
 STRUCTURE_ROW_LABELS = {"table row"}
 STRUCTURE_SPAN_LABELS = {"table projected row header", "table spanning cell", "span_like"}
+
+
+def _resolve_local_model_dir(model_dir: str | Path, required_files: tuple[str, ...] = ()) -> Path:
+    path = Path(model_dir)
+    if path.is_dir() and all((path / required).exists() for required in required_files):
+        return path
+
+    fallback = path.parent
+    if fallback.is_dir() and all((fallback / required).exists() for required in required_files):
+        logger.warning("Model directory %s not found; using %s instead", path, fallback)
+        return fallback
+
+    return path
 
 
 def _normalize_structure_label_name(name):
@@ -172,7 +184,7 @@ class TableGrid:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def load_td_model(model_dir, providers=None):
-    model_dir = Path(model_dir)
+    model_dir = _resolve_local_model_dir(model_dir, ("config.json", "model.safetensors", "preprocessor_config.json"))
     processor = AutoImageProcessor.from_pretrained(model_dir, use_fast=False)
 
     # TD config may contain backbone fields that are not loadable in local setups.
@@ -197,7 +209,7 @@ def load_td_model(model_dir, providers=None):
 
 
 def load_tsr_model(model_dir, providers=None):
-    model_dir = Path(model_dir)
+    model_dir = _resolve_local_model_dir(model_dir, ("config.json", "model.safetensors", "preprocessor_config.json"))
     processor = AutoImageProcessor.from_pretrained(model_dir, use_fast=False)
 
     config = TableTransformerConfig.from_pretrained(model_dir)
@@ -1331,7 +1343,7 @@ def run_table_cell_ocr(table_crop, crop_origin, grid: TableGrid, ocr_engine, tab
     """Run OCR on a table crop and assign text to cells."""
     cells = list(grid.cells)
     if not cells:
-        return list(cells), tuple(grid.notes)
+        return list(cells), tuple(grid.notes), []
     ocr_crop, ocr_origin = _tighten_ocr_crop(table_crop, crop_origin, cells)
     start = perf_counter()
     bgr = _pil_to_bgr(ocr_crop)
@@ -1344,6 +1356,7 @@ def run_table_cell_ocr(table_crop, crop_origin, grid: TableGrid, ocr_engine, tab
         ((crop_x0 + b[0], crop_y0 + b[1], crop_x0 + b[2], crop_y0 + b[3]), t, s)
         for b, t, s in _extract_ocr_items(raw_output)
     ]
+    serialized_ocr_items = [_serialize_ocr_item(item) for item in abs_items]
     refined_grid = TableHeuristicRefiner(
         table_crop=table_crop,
         crop_origin=crop_origin,
@@ -1366,7 +1379,7 @@ def run_table_cell_ocr(table_crop, crop_origin, grid: TableGrid, ocr_engine, tab
         assigned_item_count,
         len(abs_items),
     )
-    return assigned_cells, refined_grid.notes
+    return assigned_cells, refined_grid.notes, serialized_ocr_items
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1386,6 +1399,15 @@ def _serialize_cell(cell: CellPrediction) -> dict:
     if PIPELINE_DEBUG_HEURISTICS and cell.extra:
         payload["extra"] = cell.extra
     return payload
+
+
+def _serialize_ocr_item(item) -> dict:
+    bbox, text, score = item
+    return {
+        "bbox": [round(float(v), 1) for v in bbox],
+        "text": " ".join(str(text).split()),
+        "score": round(float(score), 4) if score is not None else None,
+    }
 
 
 def _cell_sort_key(cell):
@@ -1472,7 +1494,7 @@ def run_pipeline(image_path: str | Path) -> dict:
     for table_item in table_items:
         if not table_item["cells"]:
             continue
-        table_item["cells"], notes = run_table_cell_ocr(
+        table_item["cells"], notes, ocr_items = run_table_cell_ocr(
             table_crop=table_item["crop"],
             crop_origin=table_item["crop_origin"],
             grid=table_item["grid"],
@@ -1480,6 +1502,7 @@ def run_pipeline(image_path: str | Path) -> dict:
             table_id=table_item["table_id"],
         )
         table_item["heuristic_notes"] = list(notes)
+        table_item["ocr_items"] = ocr_items
     if not use_cached_runtimes:
         del ocr_engine
     logger.info("OCR complete in %.3fs", perf_counter() - ocr_phase_start)
@@ -1494,6 +1517,7 @@ def run_pipeline(image_path: str | Path) -> dict:
             "bbox": [round(float(v), 1) for v in ti["detection"].bbox],
             "td_score": round(float(ti["detection"].score), 4) if ti["detection"].score is not None else None,
             "cells": [_serialize_cell(c) for c in ordered_cells],
+            "ocr_items": list(ti.get("ocr_items", [])),
             "structures": [
                 {
                     "label": s.label,
@@ -1517,6 +1541,85 @@ def run_pipeline(image_path: str | Path) -> dict:
     logger.info("Annotation written to %s", out_path)
 
     return annotation
+
+
+    return annotation
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Localized Extraction Hooks (for GUI interactions)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def run_tsr_on_bbox(pil_image, bbox: list[float]) -> dict:
+    """Re-run Structure Recognition on a custom bounding box."""
+    img_w, img_h = pil_image.size
+    frame_box = tuple(bbox)
+    
+    # 1. Provide a crop specifically for the requested area
+    table_crop, crop_origin = crop_table_with_padding(pil_image, frame_box, padding_pct=PADDING_PCT)
+    
+    # 2. Get TSR models
+    providers = _selected_providers()
+    providers_key = tuple(providers)
+    tsr_processor, tsr_session = _get_tsr_runtime(providers_key)
+    
+    # 3. Inference
+    tsr_raw = run_tsr_inference(table_crop, tsr_processor, tsr_session)
+    
+    # 4. Post-process (using -1 as a temporary ID)
+    structures, grid = _postprocess_tsr_output(
+        tsr_raw, crop_origin, table_crop.size, (img_w, img_h), -1
+    )
+    
+    # 5. Run OCR automatically for this new table
+    ocr_use_cuda = _ocr_cuda_enabled()
+    ocr_engine = _get_ocr_engine(ocr_use_cuda)
+    
+    assigned_cells, notes, ocr_items = run_table_cell_ocr(
+        table_crop=table_crop,
+        crop_origin=crop_origin,
+        grid=grid,
+        ocr_engine=ocr_engine,
+        table_id=-1,
+    )
+    
+    return {
+        "bbox": [round(float(v), 1) for v in frame_box],
+        "cells": [_serialize_cell(c) for c in assigned_cells],
+        "structures": [
+            {
+                "label": s.label,
+                "bbox": [round(float(v), 1) for v in s.bbox],
+                "score": round(float(s.score), 4) if s.score is not None else None,
+            }
+            for s in structures
+        ],
+        "ocr_items": ocr_items,
+    }
+
+
+def run_ocr_on_bbox(pil_image, bbox: list[float]) -> dict:
+    """Localized OCR: Detect and recognize text in a specific document region."""
+    x1, y1, x2, y2 = bbox
+    crop = pil_image.crop((x1, y1, x2, y2))
+    
+    ocr_use_cuda = _ocr_cuda_enabled()
+    ocr_engine = _get_ocr_engine(ocr_use_cuda)
+    
+    bgr = _pil_to_bgr(crop)
+    raw_output = ocr_engine(bgr, use_cls=False)
+    
+    items = []
+    text_content = []
+    for b, t, s in _extract_ocr_items(raw_output):
+        abs_bbox = (x1 + b[0], y1 + b[1], x1 + b[2], y1 + b[3])
+        items.append(_serialize_ocr_item((abs_bbox, t, s)))
+        text_content.append(str(t))
+        
+    return {
+        "text": " ".join(text_content),
+        "cells": items, # Return as 'cells' for easy UI rendering if needed
+    }
 
 
 # ---------------------------------------------------------------------------

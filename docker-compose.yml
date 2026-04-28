@@ -1,0 +1,25 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: agent-pdf:latest
+    container_name: agent-pdf
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+  zrok:
+    image: openziti/zrok
+    container_name: zrok-tunnel
+    restart: unless-stopped
+    depends_on:
+      - app
+    user: root
+    environment:
+      ZROK_ENABLE_TOKEN: ${ZROK_ENABLE_TOKEN:?Set ZROK_ENABLE_TOKEN in .env or environment}
+    entrypoint: ["/bin/bash", "-c"]
+    # The command first enables the environment, then shares the app container
+    command: |
+      zrok enable "$${ZROK_ENABLE_TOKEN}" &&
+      zrok share public http://app:8001 --headless

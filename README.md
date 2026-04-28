@@ -17,7 +17,7 @@ Ag27 extracts tables from document images. It combines table detection, table st
 - `export.py` handles JSON, HTML, CSV, and Excel output.
 - `web/` contains the Vite React frontend.
 - `Annotated_GroundTruth/images/` contains sample inputs.
-- `TATR_TD/`, `TableStructureRecognition/model35/`, and `ocr_models/` hold the local model files.
+- `TATR_TD/`, `TableStructureRecognition/`, and `ocr_models/` hold the local model files.
 
 ## Run The Web App
 
@@ -29,7 +29,7 @@ cd web && npm install && npm run build && cd ..
 uv run python server.py
 ```
 
-Open `http://localhost:8000` in a browser.
+Open `http://localhost:8001` in a browser.
 
 If you want a CPU-only run on this machine:
 
@@ -56,7 +56,28 @@ That command writes `<image_stem>_annotation.json` next to the source image.
 - `GET /api/export/{job_id}?format=json|html|csv|xlsx`
 - `GET /api/jobs`
 
-Swagger docs are available at `http://localhost:8000/docs`.
+Swagger docs are available at `http://localhost:8001/docs`.
+
+## Run With Docker Compose
+
+Build the local image and start the services:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+To enable zrok sharing, set `ZROK_ENABLE_TOKEN` in `.env` before startup.
+
+## Deploy on Railway (GitHub Integration)
+
+1. Push this repository to GitHub.
+2. In Railway, create a new project from the GitHub repo.
+3. Railway will build from `Dockerfile` (configured in `railway.toml`).
+4. Set any required variables in Railway (for example `PIPELINE_DEVICE=cpu`).
+
+Railway provides `PORT` automatically; the container now binds to `0.0.0.0:$PORT`.
+Use `/api/health` as the service health check endpoint.
 
 ## Notes
 
