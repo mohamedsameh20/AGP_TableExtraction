@@ -69,9 +69,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Paths (overridable via environment variables for containerisation)
 # ---------------------------------------------------------------------------
-TD_MODEL_DIR  = Path(os.environ.get("TD_MODEL_DIR",  r"A:\Ag27\TATR_TD"))
-TSR_MODEL_DIR = Path(os.environ.get("TSR_MODEL_DIR", r"A:\Ag27\TableStructureDetection"))
-OCR_MODEL_DIR = Path(os.environ.get("OCR_MODEL_DIR", r"A:\Ag27\ocr_models"))
+TD_MODEL_DIR  = Path(os.environ.get("TD_MODEL_DIR",  r"TATR_TD"))
+TSR_MODEL_DIR = Path(os.environ.get("TSR_MODEL_DIR", r"TableStructureRecognition"))
+OCR_MODEL_DIR = Path(os.environ.get("OCR_MODEL_DIR", r"ocr_models"))
 DET_MODEL_PATH = OCR_MODEL_DIR / "texdet.onnx"
 REC_MODEL_PATH = OCR_MODEL_DIR / "textrec.onnx"
 DICT_PATH      = OCR_MODEL_DIR / "dictionary.txt"
@@ -79,11 +79,11 @@ DICT_PATH      = OCR_MODEL_DIR / "dictionary.txt"
 # ---------------------------------------------------------------------------
 # Thresholds & constants
 # ---------------------------------------------------------------------------
-TD_CONF_THRESHOLD       = 0.75
+TD_CONF_THRESHOLD       = 0.55
 TD_NMS_IOU              = 0.5
 TSR_CONF_THRESHOLD      = 0.5
 TSR_NMS_IOU             = 0.35
-PADDING_PCT             = 0.02
+PADDING_PCT             = 0.04
 TSR_SPAN_OVERLAP_THRESH = 0.25
 CELL_OCR_SCORE_THRESHOLD = 0.35
 OCR_REC_BATCH_NUM       = max(1, int(os.environ.get("OCR_REC_BATCH_NUM", "32")))
@@ -98,18 +98,34 @@ OCR_ASSIGN_USE_NEAREST  = os.environ.get("OCR_ASSIGN_USE_NEAREST", "1").strip().
 TSR_ENABLE_LEFT_SPANNER = os.environ.get("TSR_ENABLE_LEFT_SPANNER", "1").strip().lower() not in {"0", "false", "no", "off"}
 TSR_LEFT_SPANNER_MIN_SCORE = float(os.environ.get("TSR_LEFT_SPANNER_MIN_SCORE", "0.35"))
 TSR_LEFT_SPANNER_MIN_FILL_RATIO = float(os.environ.get("TSR_LEFT_SPANNER_MIN_FILL_RATIO", "0.98"))
+TSR_TEXT_ANCHORED_REBUILD = os.environ.get("TSR_TEXT_ANCHORED_REBUILD", "1").strip().lower() not in {"0", "false", "no", "off"}
+TSR_REBUILD_MIN_TEXT_LINES = max(2, int(os.environ.get("TSR_REBUILD_MIN_TEXT_LINES", "2")))
+TSR_REBUILD_GAP_RATIO = float(os.environ.get("TSR_REBUILD_GAP_RATIO", "0.55"))
+TSR_REBUILD_MIN_GAP_PX = float(os.environ.get("TSR_REBUILD_MIN_GAP_PX", "4.0"))
 PIPELINE_DEBUG_HEURISTICS = os.environ.get("PIPELINE_DEBUG_HEURISTICS", "0").strip().lower() not in {"0", "false", "no", "off"}
 
 STRUCTURE_LABELS = {
     1: "table column",
     2: "table row",
     3: "table column header",
-    4: "table projected row header",
-    5: "table spanning cell",
+    4: "table spanning cell",
 }
 STRUCTURE_COLUMN_LABELS = {"table column"}
 STRUCTURE_ROW_LABELS = {"table row"}
 STRUCTURE_SPAN_LABELS = {"table projected row header", "table spanning cell", "span_like"}
+
+
+def _resolve_local_model_dir(model_dir: str | Path, required_files: tuple[str, ...] = ()) -> Path:
+    path = Path(model_dir)
+    if path.is_dir() and all((path / required).exists() for required in required_files):
+        return path
+
+    fallback = path.parent
+    if fallback.is_dir() and all((fallback / required).exists() for required in required_files):
+        logger.warning("Model directory %s not found; using %s instead", path, fallback)
+        return fallback
+
+    return path
 
 
 def _normalize_structure_label_name(name):
@@ -168,7 +184,7 @@ class TableGrid:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def load_td_model(model_dir, providers=None):
-    model_dir = Path(model_dir)
+    model_dir = _resolve_local_model_dir(model_dir, ("config.json", "model.safetensors", "preprocessor_config.json"))
     processor = AutoImageProcessor.from_pretrained(model_dir, use_fast=False)
 
     # TD config may contain backbone fields that are not loadable in local setups.
@@ -193,7 +209,7 @@ def load_td_model(model_dir, providers=None):
 
 
 def load_tsr_model(model_dir, providers=None):
-    model_dir = Path(model_dir)
+    model_dir = _resolve_local_model_dir(model_dir, ("config.json", "model.safetensors", "preprocessor_config.json"))
     processor = AutoImageProcessor.from_pretrained(model_dir, use_fast=False)
 
     config = TableTransformerConfig.from_pretrained(model_dir)
@@ -951,6 +967,76 @@ def _merge_ocr_items(items):
     return text, mean_score
 
 
+def _cluster_text_lines(ocr_items, gap_ratio=TSR_REBUILD_GAP_RATIO, min_gap_px=TSR_REBUILD_MIN_GAP_PX):
+    """Cluster OCR text boxes into horizontal text lines by Y-center proximity.
+
+    Returns a list of dicts sorted top-to-bottom by y_center, each with:
+        y_min, y_max, y_center, boxes (list of (bbox, text, score) items).
+    """
+    if not ocr_items:
+        return []
+    entries = []
+    for item in ocr_items:
+        box = item[0]
+        cy = (box[1] + box[3]) / 2.0
+        h = max(1.0, box[3] - box[1])
+        entries.append((cy, h, item))
+    entries.sort(key=lambda e: e[0])
+
+    heights = [e[1] for e in entries]
+    median_h = float(np.median(heights))
+    gap_threshold = max(min_gap_px, median_h * gap_ratio)
+
+    lines = []
+    cur_boxes = [entries[0][2]]
+    cur_cy_sum = entries[0][0]
+    cur_y_min = entries[0][2][0][1]
+    cur_y_max = entries[0][2][0][3]
+
+    for i in range(1, len(entries)):
+        cy, _h, item = entries[i]
+        cur_mean_cy = cur_cy_sum / len(cur_boxes)
+        if cy - cur_mean_cy > gap_threshold:
+            lines.append({
+                "y_min": cur_y_min, "y_max": cur_y_max,
+                "y_center": cur_cy_sum / len(cur_boxes),
+                "boxes": cur_boxes,
+            })
+            cur_boxes = [item]
+            cur_cy_sum = cy
+            cur_y_min = item[0][1]
+            cur_y_max = item[0][3]
+        else:
+            cur_boxes.append(item)
+            cur_cy_sum += cy
+            cur_y_min = min(cur_y_min, item[0][1])
+            cur_y_max = max(cur_y_max, item[0][3])
+
+    lines.append({
+        "y_min": cur_y_min, "y_max": cur_y_max,
+        "y_center": cur_cy_sum / len(cur_boxes),
+        "boxes": cur_boxes,
+    })
+    return lines
+
+
+def _rebuild_row_bounds_from_text_lines(text_lines, frame_top, frame_bottom):
+    """Derive row boundaries from text line clusters.
+
+    Places boundaries at the midpoint of each gap between consecutive text
+    lines.  The outer boundaries stay at the original frame edges.
+    """
+    if not text_lines:
+        return [float(frame_top), float(frame_bottom)]
+    bounds = [min(float(frame_top), float(text_lines[0]["y_min"]) - 1.0)]
+    for i in range(len(text_lines) - 1):
+        gap_top = text_lines[i]["y_max"]
+        gap_bottom = text_lines[i + 1]["y_min"]
+        bounds.append((gap_top + gap_bottom) / 2.0)
+    bounds.append(max(float(frame_bottom), float(text_lines[-1]["y_max"]) + 1.0))
+    return bounds
+
+
 def _ocr_box_area(box):
     return max(0.0, box[2] - box[0]) * max(0.0, box[3] - box[1])
 
@@ -1130,9 +1216,64 @@ class TableHeuristicRefiner:
         self.cells = passthrough + merged_cells
         self.notes.append(f"merged {len(merged_rows)} left-anchored spanner row(s)")
 
+    def _rebuild_cells_on_new_grid(self):
+        """Generate a simple NR×NC grid of 1×1 cells for the current bounds."""
+        nr = max(0, len(self.row_bounds) - 1)
+        nc = max(0, len(self.col_bounds) - 1)
+        return [
+            CellPrediction(
+                bbox=self._cell_bbox(ri, ci),
+                row=ri,
+                col=ci,
+                table_id=self.table_id,
+            )
+            for ri in range(nr)
+            for ci in range(nc)
+        ]
+
+    def _text_anchored_row_rebuild(self, ocr_items):
+        """Use OCR text-detection boxes to validate and correct TSR row boundaries.
+
+        Clusters OCR boxes into horizontal text lines, then rebuilds row
+        boundaries so they sit in the gaps between actual text — eliminating
+        hallucinated rows, fixing overlapping rows, and correcting misplaced
+        boundaries.
+        """
+        if not TSR_TEXT_ANCHORED_REBUILD or self.row_count < 1:
+            return
+
+        text_lines = _cluster_text_lines(ocr_items)
+        if len(text_lines) < TSR_REBUILD_MIN_TEXT_LINES:
+            return
+
+        old_nr = self.row_count
+        new_nr = len(text_lines)
+
+        frame_top = self.row_bounds[0]
+        frame_bottom = self.row_bounds[-1]
+        new_row_bounds = _rebuild_row_bounds_from_text_lines(
+            text_lines, frame_top, frame_bottom,
+        )
+
+        # If row count unchanged AND boundaries barely moved, skip rebuild
+        if new_nr == old_nr:
+            total_shift = sum(
+                abs(float(a) - float(b))
+                for a, b in zip(self.row_bounds, new_row_bounds)
+            )
+            if total_shift < 3.0:
+                return
+
+        self.row_bounds = tuple(round(float(v), 1) for v in new_row_bounds)
+        self.cells = self._rebuild_cells_on_new_grid()
+        self.notes.append(f"text-anchored row rebuild: {old_nr}\u2192{new_nr} rows")
+
     def refine(self, ocr_items):
         if not self.cells:
             return TableGrid(cells=[], row_bounds=self.row_bounds, col_bounds=self.col_bounds, notes=tuple(self.notes))
+        # Phase 1: Text-anchored row rebuild (corrects hallucinated/overlapping rows)
+        self._text_anchored_row_rebuild(ocr_items)
+        # Phase 2: OCR-based heuristics on the corrected grid
         assignments, _ = _compute_cell_assignments(self.cells, ocr_items)
         self._merge_left_anchored_spanners(assignments)
         self.cells.sort(key=_cell_sort_key)
@@ -1202,7 +1343,7 @@ def run_table_cell_ocr(table_crop, crop_origin, grid: TableGrid, ocr_engine, tab
     """Run OCR on a table crop and assign text to cells."""
     cells = list(grid.cells)
     if not cells:
-        return list(cells), tuple(grid.notes)
+        return list(cells), tuple(grid.notes), []
     ocr_crop, ocr_origin = _tighten_ocr_crop(table_crop, crop_origin, cells)
     start = perf_counter()
     bgr = _pil_to_bgr(ocr_crop)
@@ -1215,6 +1356,7 @@ def run_table_cell_ocr(table_crop, crop_origin, grid: TableGrid, ocr_engine, tab
         ((crop_x0 + b[0], crop_y0 + b[1], crop_x0 + b[2], crop_y0 + b[3]), t, s)
         for b, t, s in _extract_ocr_items(raw_output)
     ]
+    serialized_ocr_items = [_serialize_ocr_item(item) for item in abs_items]
     refined_grid = TableHeuristicRefiner(
         table_crop=table_crop,
         crop_origin=crop_origin,
@@ -1237,7 +1379,7 @@ def run_table_cell_ocr(table_crop, crop_origin, grid: TableGrid, ocr_engine, tab
         assigned_item_count,
         len(abs_items),
     )
-    return assigned_cells, refined_grid.notes
+    return assigned_cells, refined_grid.notes, serialized_ocr_items
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1252,10 +1394,20 @@ def _serialize_cell(cell: CellPrediction) -> dict:
         "row_span": max(1, int(cell.row_span)),
         "col_span": max(1, int(cell.col_span)),
         "text": " ".join(str(cell.text).split()),
+        "ocr_score": round(float(cell.ocr_score), 4) if cell.ocr_score is not None else None,
     }
     if PIPELINE_DEBUG_HEURISTICS and cell.extra:
         payload["extra"] = cell.extra
     return payload
+
+
+def _serialize_ocr_item(item) -> dict:
+    bbox, text, score = item
+    return {
+        "bbox": [round(float(v), 1) for v in bbox],
+        "text": " ".join(str(text).split()),
+        "score": round(float(score), 4) if score is not None else None,
+    }
 
 
 def _cell_sort_key(cell):
@@ -1342,7 +1494,7 @@ def run_pipeline(image_path: str | Path) -> dict:
     for table_item in table_items:
         if not table_item["cells"]:
             continue
-        table_item["cells"], notes = run_table_cell_ocr(
+        table_item["cells"], notes, ocr_items = run_table_cell_ocr(
             table_crop=table_item["crop"],
             crop_origin=table_item["crop_origin"],
             grid=table_item["grid"],
@@ -1350,6 +1502,7 @@ def run_pipeline(image_path: str | Path) -> dict:
             table_id=table_item["table_id"],
         )
         table_item["heuristic_notes"] = list(notes)
+        table_item["ocr_items"] = ocr_items
     if not use_cached_runtimes:
         del ocr_engine
     logger.info("OCR complete in %.3fs", perf_counter() - ocr_phase_start)
@@ -1362,7 +1515,17 @@ def run_pipeline(image_path: str | Path) -> dict:
         tables.append({
             "table_id": ti["table_id"],
             "bbox": [round(float(v), 1) for v in ti["detection"].bbox],
+            "td_score": round(float(ti["detection"].score), 4) if ti["detection"].score is not None else None,
             "cells": [_serialize_cell(c) for c in ordered_cells],
+            "ocr_items": list(ti.get("ocr_items", [])),
+            "structures": [
+                {
+                    "label": s.label,
+                    "bbox": [round(float(v), 1) for v in s.bbox],
+                    "score": round(float(s.score), 4) if s.score is not None else None,
+                }
+                for s in ti.get("structures", [])
+            ],
             **({"heuristic_notes": list(ti["heuristic_notes"])} if PIPELINE_DEBUG_HEURISTICS and ti["heuristic_notes"] else {}),
         })
 
@@ -1378,6 +1541,85 @@ def run_pipeline(image_path: str | Path) -> dict:
     logger.info("Annotation written to %s", out_path)
 
     return annotation
+
+
+    return annotation
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Localized Extraction Hooks (for GUI interactions)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def run_tsr_on_bbox(pil_image, bbox: list[float]) -> dict:
+    """Re-run Structure Recognition on a custom bounding box."""
+    img_w, img_h = pil_image.size
+    frame_box = tuple(bbox)
+    
+    # 1. Provide a crop specifically for the requested area
+    table_crop, crop_origin = crop_table_with_padding(pil_image, frame_box, padding_pct=PADDING_PCT)
+    
+    # 2. Get TSR models
+    providers = _selected_providers()
+    providers_key = tuple(providers)
+    tsr_processor, tsr_session = _get_tsr_runtime(providers_key)
+    
+    # 3. Inference
+    tsr_raw = run_tsr_inference(table_crop, tsr_processor, tsr_session)
+    
+    # 4. Post-process (using -1 as a temporary ID)
+    structures, grid = _postprocess_tsr_output(
+        tsr_raw, crop_origin, table_crop.size, (img_w, img_h), -1
+    )
+    
+    # 5. Run OCR automatically for this new table
+    ocr_use_cuda = _ocr_cuda_enabled()
+    ocr_engine = _get_ocr_engine(ocr_use_cuda)
+    
+    assigned_cells, notes, ocr_items = run_table_cell_ocr(
+        table_crop=table_crop,
+        crop_origin=crop_origin,
+        grid=grid,
+        ocr_engine=ocr_engine,
+        table_id=-1,
+    )
+    
+    return {
+        "bbox": [round(float(v), 1) for v in frame_box],
+        "cells": [_serialize_cell(c) for c in assigned_cells],
+        "structures": [
+            {
+                "label": s.label,
+                "bbox": [round(float(v), 1) for v in s.bbox],
+                "score": round(float(s.score), 4) if s.score is not None else None,
+            }
+            for s in structures
+        ],
+        "ocr_items": ocr_items,
+    }
+
+
+def run_ocr_on_bbox(pil_image, bbox: list[float]) -> dict:
+    """Localized OCR: Detect and recognize text in a specific document region."""
+    x1, y1, x2, y2 = bbox
+    crop = pil_image.crop((x1, y1, x2, y2))
+    
+    ocr_use_cuda = _ocr_cuda_enabled()
+    ocr_engine = _get_ocr_engine(ocr_use_cuda)
+    
+    bgr = _pil_to_bgr(crop)
+    raw_output = ocr_engine(bgr, use_cls=False)
+    
+    items = []
+    text_content = []
+    for b, t, s in _extract_ocr_items(raw_output):
+        abs_bbox = (x1 + b[0], y1 + b[1], x1 + b[2], y1 + b[3])
+        items.append(_serialize_ocr_item((abs_bbox, t, s)))
+        text_content.append(str(t))
+        
+    return {
+        "text": " ".join(text_content),
+        "cells": items, # Return as 'cells' for easy UI rendering if needed
+    }
 
 
 # ---------------------------------------------------------------------------

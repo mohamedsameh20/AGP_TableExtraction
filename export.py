@@ -127,3 +127,32 @@ def export_excel(annotation: dict, output_path: str) -> None:
                 )
 
     wb.save(output_path)
+
+
+def export_csv_all(annotation: dict) -> str:
+    """Export *all* tables in a single CSV string.
+
+    Each table is preceded by a marker row ``--- Table N ---`` and
+    followed by a blank separator row.  This satisfies the "one CSV
+    with all tables" requirement.
+    """
+    tables = annotation.get("tables", [])
+    if not tables:
+        return ""
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    for idx, table in enumerate(tables):
+        cells = table.get("cells", [])
+        if not cells:
+            continue
+        # Marker row
+        writer.writerow([f"--- Table {table.get('table_id', idx)} ---"])
+        max_row = max(c["row"] + c["row_span"] for c in cells)
+        max_col = max(c["col"] + c["col_span"] for c in cells)
+        grid = [["" for _ in range(max_col)] for _ in range(max_row)]
+        for c in cells:
+            grid[c["row"]][c["col"]] = c.get("text", "")
+        for row in grid:
+            writer.writerow(row)
+        writer.writerow([])  # blank separator
+    return buf.getvalue()

@@ -7,8 +7,20 @@ __pycache__/
 venv/
 env/
 ENV/
+.python-version
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
 build/
 dist/
+site/
 develop-eggs/
 downloads/
 eggs/
@@ -38,15 +50,19 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Test / coverage
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Environment files
+# Environment files / secrets
 .env
 .env.*
 !.env.example
+
+# Runtime artifacts
+uploads/
+*.log
+*.pid
+*.pid.lock
+*.out
+*.err
+*_annotation.json
 
 # Editor / OS
 .vscode/
@@ -57,11 +73,8 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-
-# Project outputs
-*_annotation.json
+# Local tooling
+.codex
 
 # Large model artifacts
 *.safetensors

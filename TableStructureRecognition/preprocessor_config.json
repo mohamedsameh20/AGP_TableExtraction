@@ -17,7 +17,6 @@
     0.225
   ],
   "max_size": 1000,
-  "pad_size": null,
   "resample": 2,
   "rescale_factor": 0.00392156862745098,
   "size": {

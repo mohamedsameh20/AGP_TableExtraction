@@ -33,7 +33,12 @@ The app has two main tools:
 `-- web/                         # Vite + React frontend
 ```
 
-## Requirements
+- `pipeline.py` runs the 5-phase extraction pipeline.
+- `server.py` exposes the API and serves the built web app.
+- `export.py` handles JSON, HTML, CSV, and Excel output.
+- `web/` contains the Vite React frontend.
+- `Annotated_GroundTruth/images/` contains sample inputs.
+- `TATR_TD/`, `TableStructureRecognition/`, and `ocr_models/` hold the local model files.
 
 - Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/) for Python environment management
@@ -55,27 +60,7 @@ Run these commands from the project root.
 uv sync
 ```
 
-Use `uv sync` instead of `pip install -r requirements.txt` for the web app, because `pyproject.toml` includes the FastAPI, Uvicorn, multipart upload, and frontend-serving dependencies.
-
-### 2. Point the pipeline at the local model folders
-
-PowerShell:
-
-```powershell
-$env:TD_MODEL_DIR = "$PWD\TATR_TD"
-$env:TSR_MODEL_DIR = "$PWD\TableStructureRecognition"
-$env:OCR_MODEL_DIR = "$PWD\ocr_models"
-```
-
-Bash:
-
-```bash
-export TD_MODEL_DIR="$PWD/TATR_TD"
-export TSR_MODEL_DIR="$PWD/TableStructureRecognition"
-export OCR_MODEL_DIR="$PWD/ocr_models"
-```
-
-### 3. Optional: force CPU mode
+Open `http://localhost:8001` in a browser.
 
 PowerShell:
 
@@ -201,90 +186,28 @@ Phase3_labels.backup.json
 - `GET /api/export/{job_id}?format=json|html|csv|xlsx`
 - `GET /api/jobs`
 
-### Label Editor
+Swagger docs are available at `http://localhost:8001/docs`.
 
-- `GET /api/editor/meta`
-- `GET /api/editor/image/{image_id}`
-- `GET /api/editor/assets/{file_name}`
-- `POST /api/editor/image/{image_id}`
+## Run With Docker Compose
 
-## Export Formats
+Build the local image and start the services:
 
-- **JSON**: full pipeline annotation object.
-- **HTML**: one HTML table per detected table.
-- **CSV**: first detected table as CSV.
-- **XLSX**: one Excel sheet per detected table.
-
-## Useful Environment Variables
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `TD_MODEL_DIR` | Table detection model directory | `A:\Ag27\TATR_TD` |
-| `TSR_MODEL_DIR` | Table structure model directory | `A:\Ag27\TableStructureDetection` |
-| `OCR_MODEL_DIR` | OCR model directory | `A:\Ag27\ocr_models` |
-| `PIPELINE_DEVICE` | Set to `cpu` to force CPU execution | auto/GPU-capable behavior |
-| `UPLOAD_DIR` | Uploaded image and export temp directory | `./uploads` |
-| `EDITOR_DATASET_PATH` | Label editor annotation JSON | `Phase3/Phase3_labels.json` |
-| `EDITOR_IMAGES_DIR` | Label editor image directory | `Phase3/Images` |
-| `PREWARM_PIPELINE_ON_STARTUP` | Load pipeline runtimes during server startup | disabled |
-
-## Development Commands
-
-Frontend development server:
-
-```powershell
-cd web
-npm.cmd run dev
+```bash
+cp .env.example .env
+docker compose up --build
 ```
 
-Frontend production build:
+To enable zrok sharing, set `ZROK_ENABLE_TOKEN` in `.env` before startup.
 
-```powershell
-cd web
-npm.cmd run build
-```
+## Deploy on Railway (GitHub Integration)
 
-Frontend lint:
+1. Push this repository to GitHub.
+2. In Railway, create a new project from the GitHub repo.
+3. Railway will build from `Dockerfile` (configured in `railway.toml`).
+4. Set any required variables in Railway (for example `PIPELINE_DEVICE=cpu`).
 
-```powershell
-cd web
-npm.cmd run lint
-```
-
-Python syntax check:
-
-```powershell
-python -m py_compile server.py export.py pipeline.py convert_models_to_onnx.py
-```
-
-## Troubleshooting
-
-### `npm` is blocked by PowerShell execution policy
-
-Use `npm.cmd` instead of `npm`:
-
-```powershell
-npm.cmd install
-npm.cmd run build
-```
-
-### Model folders are not found
-
-Set the model directory environment variables before running the server:
-
-```powershell
-$env:TD_MODEL_DIR = "$PWD\TATR_TD"
-$env:TSR_MODEL_DIR = "$PWD\TableStructureRecognition"
-$env:OCR_MODEL_DIR = "$PWD\ocr_models"
-```
-
-### The Label Editor shows a dataset error
-
-Set `EDITOR_DATASET_PATH` and `EDITOR_IMAGES_DIR` to your dataset locations, or place the dataset at the default `Phase3/` paths.
-
-### CPU execution is slow
-
-This is expected. Remove `PIPELINE_DEVICE=cpu` and use a CUDA-capable environment for faster inference.
+Railway provides `PORT` automatically; the container now binds to `0.0.0.0:$PORT`.
+Use `/api/health` as the service health check endpoint.
 
 ## Notes
 

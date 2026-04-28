@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.git/
+.env
+venv/
+.venv/
+*.egg-info/
+node_modules/
+dist/
+web/node_modules/
+web/dist/
+.codex/
+Annotated_GroundTruth/
+uploads/
